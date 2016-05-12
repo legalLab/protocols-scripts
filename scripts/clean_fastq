@@ -22,9 +22,6 @@ parser.add_argument('input', help='input file name')
 parser.add_argument('output', help='output file name')
 parser.add_argument('cut_off', help='minimum fragment length, default 250 bp', type=int, nargs='?', default=250)
 args = parser.parse_args()
-
-if args.verbose:
-    print("verbosity turned on")
     
 n_reads = 0 #Initialize rad counter
 sequences = [] #Setup an empty list of sequence lengths
