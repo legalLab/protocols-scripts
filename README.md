@@ -1,2 +1,2 @@
 # protocols-scripts
-lab protocols and scripts/instructions to install software under Ubuntu Linux
+lab protocols, scripts for data manipulation and instructions to install software under Ubuntu Linux
