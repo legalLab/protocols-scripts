@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
-# script collapses haplotypes - it requires a sequences in list, with no gap chars
-# requires the parallel package
-# returns the longest haplotype if they are the same but different lengths
+# script collapses haplotypes (i.e. removes duplicate sequences)
+# requires unaligned sequences in list, with no gap chars (otherwise they'll be considered different)
+# treats ambiguous bases (e.g. R, Y, N) as different 
+# requires the parallel package to run much faster
+# returns the longest sequence if they are the otherwise the same, but different lengths
 
 hapCollapse <- function(data, cores){#
     # sort by length
