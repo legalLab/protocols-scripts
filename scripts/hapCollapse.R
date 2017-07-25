@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 require("parallel")
+require("stringr")
 
 # script collapses haplotypes (i.e. removes duplicate sequences)
 # requires unaligned sequences in list, with no gap chars (otherwise gaps are considered differences)
