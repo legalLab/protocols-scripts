@@ -11,7 +11,7 @@ clean_dna <- function(dna){#
     # convert to a list
     dat <- as.list(dna)
     # convert to character
-    datc <- as.character(dna)
+    datc <- as.character(dat)
     # make a warning
         # collapse text into vector
         cdat <- lapply(datc, function(x) paste(x, collapse=""))
@@ -24,8 +24,8 @@ clean_dna <- function(dna){#
     # get positions of all non bases
     inds <- lapply(datc, function(x) grep("a|c|t|g", x, ignore.case=TRUE))
     # match positions and remove  
-    dlimp <- mapply(function(x,y) x[y], x=datc, y=inds)
+    dlimp <- mapply(function(x,y) x[y], x=datc, y=inds, SIMPLIFY=FALSE)
     # convert to dnabin
     dbin <- as.DNAbin(dlimp)
-    return(dbin)
+    return(as.list(dbin))
 }#
