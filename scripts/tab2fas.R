@@ -5,13 +5,13 @@
 # Rupert Collins August 2018
 
 # needs ape
-library(ape)
+#library(ape)
 
 # fun
 tab2fas <- function(df,seqcol,namecol){
     dtmp <- strsplit(as.character(df[[seqcol]]), "")
     names(dtmp) <- as.character(df[[namecol]])
-    dat <- as.DNAbin(dtmp)
+    dat <- ape::as.DNAbin(dtmp)
     return(dat)
 }
 

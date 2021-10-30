@@ -4,11 +4,11 @@
 # Rupert Collins Feb 2020
 
 # needs ape
-library(ape)
+#library(ape)
 
 # fun
 revcomp_dna <- function(dnacol){
-    dnas <- as.DNAbin(strsplit(dnacol,""))
+    dnas <- ape::as.DNAbin(strsplit(dnacol,""))
     dnas.revcomp <- toupper(mapply(paste,collapse="",as.character(ape::complement(dnas)),SIMPLIFY=TRUE,USE.NAMES=FALSE))
     return(dnas.revcomp)
 }
