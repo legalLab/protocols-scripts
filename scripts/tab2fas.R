@@ -9,6 +9,7 @@
 
 # fun
 tab2fas <- function(df,seqcol,namecol){
+    df <- as.data.frame(df)
     dtmp <- strsplit(as.character(df[[seqcol]]), "")
     names(dtmp) <- as.character(df[[namecol]])
     dat <- ape::as.DNAbin(dtmp)
