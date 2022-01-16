@@ -21,3 +21,22 @@ tab2fas <- function(df,seqcol,namecol){
 #ff$names <- paste(ff$acc_no,ff$species,sep="_")
 #gg <- tab2fas(df=ff, seqcol="sequence", namecol="names")
 #write.dna(gg, file="gg.fas", format="fasta", colw=99999)
+
+
+# FUNCTION TO CONVERT DNABIN OBJECT TO TABULAR
+# works opposite to "tab2fas()"
+# input can be aligned (matrix) or unaligned (list)
+# strips out alignment characters
+# requires "ape", "tidyr" and "stringr" packages
+# returns a tibble
+fas2tab <- function(dnas) {
+    if(class(dnas) == "DNAbin") {
+        dnas.list <- as.list(dnas)
+        dnas.names <- names(dnas.list)
+        dnas.char <- sapply(as.character(dnas.list),paste,collapse="")
+        dnas.char.lower <- stringr::str_to_lower(dnas.char)
+        dnas.clean <- stringr::str_replace_all(dnas.char.lower,"-|n|\\?","")
+        dnas.tib <- tidyr::tibble(label=dnas.names,nucleotides=dnas.clean)
+        return(dnas.tib)
+    } else stop(writeLines("Object must be APE DNAbin format."))
+}
