@@ -2,7 +2,7 @@
 
 # functions to convert vcf data to other formats
 # depends on vcfR (should be loaded since vcfR object [vcf file] is passed to these functions)
-# depends on ape to generate nexus file (imported by vcfR)
+# depends on ape to generate nexus file (vcf2nexus, vcf2snapp)
 
 
 ################################
@@ -12,8 +12,8 @@
 #' @author Tomas Hrbek August 2020
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in MigrateN infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in MigrateN infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (MigrateN infile)
 #' @param method -> classic or het format
@@ -21,15 +21,16 @@
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a MigrateN formated input file
+#' This function converts the vcfR object to a MigrateN formatted input file
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2migrate(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "MigrateN_infile.txt", method = "N")
-#' vcf2migrate(my_vcf, indiv_pop, pop_groups, out_file = "MigrateN_infile.txt")
+#' vcf2migrate(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "MigrateN_infile.txt", method = "N")
+#' vcf2migrate(my_vcf, ind_pop, keepers, out_file = "MigrateN_infile.txt")
+#' vcf2migrate(my_vcf, ind_pop, keepers)
 #'
 
-vcf2migrate <- function (vcf, pop, in_pop, inc_missing = TRUE, 
+vcf2migrate <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
                          out_file = "migrateN_infile.txt", method = "N")
 {
     method <- match.arg(method, c("N", "H"), several.ok = FALSE)
@@ -37,9 +38,9 @@ vcf2migrate <- function (vcf, pop, in_pop, inc_missing = TRUE,
         stop(paste("Expecting an object of class vcfR, received a", 
             class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-            class(pop), "and", class(in_pop), "instead"))
+            class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -47,10 +48,10 @@ vcf2migrate <- function (vcf, pop, in_pop, inc_missing = TRUE,
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf_list <- lapply(in_pop, function(x) {
-        vcf[, c(TRUE, x == pop)]
+    vcf_list <- lapply(keep_pop, function(x) {
+        vcf[, c(TRUE, x == ind_pop)]
     })
-    names(vcf_list) <- in_pop
+    names(vcf_list) <- keep_pop
 
     if (method == "N") {
         myHeader <- c("N", length(vcf_list), nrow(vcf_list[[1]]))
@@ -149,31 +150,32 @@ vcf2migrate <- function (vcf, pop, in_pop, inc_missing = TRUE,
 #' @author Tomas Hrbek December 2020
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in Arlequin infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Arlequin infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (Arlequin infile)
 #' @export Arlequin infile of SNPs
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a Arlequin formated input file
+#' This function converts the vcfR object to a Arlequin formatted input file
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2arlequin(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "Arlequin_infile.arp")
-#' vcf2arlequin(my_vcf, indiv_pop, pop_groups, out_file = "Arlequin_infile.arp")
+#' vcf2arlequin(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "Arlequin_infile.arp")
+#' vcf2arlequin(my_vcf, ind_pop, keepers, out_file = "Arlequin_infile.arp")
+#' vcf2arlequin(my_vcf, ind_pop, keepers)
 #'
 
-vcf2arlequin <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "arlequin.arp") 
+vcf2arlequin <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "arlequin.arp") 
 {
     if (class(vcf) != "vcfR") {
         stop(paste("Expecting an object of class vcfR, received a", 
                    class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-                   class(pop), "and", class(in_pop), "instead"))
+                   class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -181,10 +183,10 @@ vcf2arlequin <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "arleq
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf_list <- lapply(in_pop, function(x) {
-        vcf[, c(TRUE, x == pop)]
+    vcf_list <- lapply(keep_pop, function(x) {
+        vcf[, c(TRUE, x == ind_pop)]
     })
-    names(vcf_list) <- in_pop
+    names(vcf_list) <- keep_pop
     pop_list <- vector(mode = "list", length = length(vcf_list))
     names(pop_list) <- names(vcf_list)
     
@@ -263,8 +265,8 @@ vcf2arlequin <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "arleq
 #' @author Tomas Hrbek December 2020
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in Structure infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Structure infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (Structure infile)
 #' @param method -> Structure or FastStructure format
@@ -272,24 +274,25 @@ vcf2arlequin <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "arleq
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a Structure or FastStructure formated input file
+#' This function converts the vcfR object to a Structure or FastStructure formatted input file
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2structure(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "Structure_infile.str", method = "S")
-#' vcf2structure(my_vcf, indiv_pop, pop_groups, out_file = "Structure_infile.str")
+#' vcf2structure(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "Structure_infile.str", method = "S")
+#' vcf2structure(my_vcf, ind_pop, keepers, out_file = "Structure_infile.str")
+#' vcf2structure(my_vcf, ind_pop, keepers)
 #'
 
-vcf2structure <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "structure.str", method = "S") 
+vcf2structure <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "structure.str", method = "S") 
 {
     method <- match.arg(method, c("S", "F"), several.ok = FALSE)
     if (class(vcf) != "vcfR") {
         stop(paste("Expecting an object of class vcfR, received a", 
                    class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-                   class(pop), "and", class(in_pop), "instead"))
+                   class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -297,16 +300,16 @@ vcf2structure <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "stru
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf_list <- lapply(in_pop, function(x) {
-        vcf[, c(TRUE, x == pop)]
+    vcf_list <- lapply(keep_pop, function(x) {
+        vcf[, c(TRUE, x == ind_pop)]
     })
-    names(vcf_list) <- in_pop
+    names(vcf_list) <- keep_pop
     pop_list <- vector(mode = "list", length = length(vcf_list))
     names(pop_list) <- names(vcf_list)
     
     for (i in 1:length(vcf_list)) {
-        gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
-        gt[gt == "."] <- "?/?"
+        gt <- extract.gt(vcf_list[[i]], return.alleles = F, convertNA = T) #convertNA not working here
+        gt[is.na(gt)] <- "?/?"
         allele1 <- apply(gt, MARGIN = 2, function(x) {
             substr(x, 1, 1)
         })
@@ -368,33 +371,35 @@ vcf2structure <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "stru
 #' @author Tomas Hrbek January 2021
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in Structure infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Structure infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (Structure infile)
 #' @export Genepop infile of SNPs
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a Genepop formated input file
+#' This function converts the vcfR object to a Genepop formatted input file
+#' This function labels populations. To read labeled populations use "read_genepop" function
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #' 01, 02, 03, 04 is 'A', 'C', 'G', 'T'
 #'
 #' @example
-#' vcf2genepop(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "Genepop_infile.gen")
-#' vcf2genepop(my_vcf, indiv_pop, pop_groups, out_file = "Genepop_infile.gen")
+#' vcf2genepop(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "Genepop_infile.gen")
+#' vcf2genepop(my_vcf, ind_pop, keepers, out_file = "Genepop_infile.gen")
+#' vcf2genepop(my_vcf, ind_pop, keepers)
 #'
 
-vcf2genepop <- function (vcf, pop, in_pop, inc_missing = TRUE, 
+vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
                          out_file = "genepop_infile.txt")
 {
     if (class(vcf) != "vcfR") {
         stop(paste("Expecting an object of class vcfR, received a", 
                    class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-                   class(pop), "and", class(in_pop), "instead"))
+                   class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -402,10 +407,10 @@ vcf2genepop <- function (vcf, pop, in_pop, inc_missing = TRUE,
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf_list <- lapply(in_pop, function(x) {
-        vcf[, c(TRUE, x == pop)]
+    vcf_list <- lapply(keep_pop, function(x) {
+        vcf[, c(TRUE, x == ind_pop)]
     })
-    names(vcf_list) <- in_pop
+    names(vcf_list) <- keep_pop
     pop_list <- vector(mode = "list", length = length(vcf_list))
     names(pop_list) <- names(vcf_list)
     
@@ -443,31 +448,35 @@ vcf2genepop <- function (vcf, pop, in_pop, inc_missing = TRUE,
 #' @author Tomas Hrbek December 2020
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in SNAPP infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in SNAPP infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (SNAPP infile)
 #' @export SNAPP infile of SNPs
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a SNAPP (Nexus) formated input file
+#' This function converts the vcfR object to a SNAPP (Nexus) formatted input file
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2snapp(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "SNAPP_infile.nex")
-#' vcf2snapp(my_vcf, indiv_pop, pop_groups, out_file = "SNAPP_infile.nex")
+#' vcf2snapp(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "SNAPP_infile.nex")
+#' vcf2snapp(my_vcf, ind_pop, keepers, out_file = "SNAPP_infile.nex")
+#' vcf2snapp(my_vcf, ind_pop, keepers)
 #'
 
-vcf2snapp <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "snapp.nex") 
+vcf2snapp <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "snapp.nex") 
 {
+#    if (!require(ape)) {
+#        install.packages("ape")
+#    }
     if (class(vcf) != "vcfR") {
         stop(paste("Expecting an object of class vcfR, received a", 
                    class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-                   class(pop), "and", class(in_pop), "instead"))
+                   class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -475,7 +484,7 @@ vcf2snapp <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "snapp.ne
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf2 <- vcf_popsub(vcf, pop, in_pop)
+    vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
     gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
     gt[is.na(gt)] <- "?"
     gt[gt == "0/0"] <- "0"
@@ -499,31 +508,35 @@ vcf2snapp <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "snapp.ne
 #' @author Tomas Hrbek February 2021
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in Nexus infile (factor)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Nexus infile (factor)
 #' @param inc_missing -> include missing data (logical)
 #' @param out_file -> name of file to output (Nexus infile)
 #' @export Nexus infile of SNPs
 #' @return nothing
 #'
 #' @details
-#' This function converts the vcfR object to a Nexus formated input file
+#' This function converts the vcfR object to a Nexus formatted input file
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2nexus(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups, inc_missing = TRUE, out_file = "Nexus_infile.nex")
-#' vcf2nexus(my_vcf, indiv_pop, pop_groups, out_file = "Nexus_infile.nex")
+#' vcf2nexus(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "Nexus_infile.nex")
+#' vcf2nexus(my_vcf, ind_pop, keepers, out_file = "Nexus_infile.nex")
+#' vcf2nexus(my_vcf, ind_pop, keepers)
 #'
 
-vcf2nexus <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "nexus.nex") 
+vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "nexus.nex") 
 {
+#    if (!require(ape)) {
+#        install.packages("ape")
+#    }
     if (class(vcf) != "vcfR") {
         stop(paste("Expecting an object of class vcfR, received a", 
                    class(vcf), "instead"))
     }
-    if (class(pop) != "factor" | class(in_pop) != "factor") {
+    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
         stop(paste("Expecting population vector, received a", 
-                   class(pop), "and", class(in_pop), "instead"))
+                   class(ind_pop), "and", class(keep_pop), "instead"))
     }
     vcf <- extract.indels(vcf, return.indels = F)
     vcf <- vcf[is.biallelic(vcf), ]
@@ -531,7 +544,7 @@ vcf2nexus <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "nexus.ne
         gt <- extract.gt(vcf, convertNA = T)
         vcf <- vcf[!rowSums((is.na(gt))), ]
     }
-    vcf2 <- vcf_popsub(vcf, pop, in_pop)
+    vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
     gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
     gt[gt == "."] <- "?"
     gt[gt == "A/A"] <- "A"
@@ -553,26 +566,27 @@ vcf2nexus <-function (vcf, pop, in_pop, inc_missing = TRUE, out_file = "nexus.ne
 
 
 ################################
-#' @title vcf_popsub
+#' @title vcf_sub_pops
 #' @description subsets vcfR format data by population
 #' @author Tomas Hrbek December 2020
 #'
 #' @param vcf -> vcfR object
-#' @param pop -> population assignment of individuals in vcf (factor)
-#' @param in_pop -> population(s) of interest to include in SNAPP infile (fator)
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in vcf infile (factor)
 #' @export nothing
 #' @return subsetted vcfR object
 #'
 #' @details
-#' This function subsets the vcfR object by population, returning new vcfR object
+#' This function subsets the vcfR object by population (groups of individuals
+#' assigned to one or more populations), returning new vcfR object
 #'
 #' @example
-#' vcf_popsub(vcf = my_vcf, pop = indiv_pop, in_pop = pop_groups)
-#' vcf_popsub(my_vcf, indiv_pop, pop_groups)
+#' vcf_sub_pops(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers)
+#' vcf_sub_pops(my_vcf, ind_pop, keepers)
 #'
 
-vcf_popsub <- function(vcf, pop, in_pop) {
-    ids <- which(pop %in% in_pop)
+vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
+    ids <- which(ind_pop %in% keep_pop)
     ids <- ids+1
     vcf <- vcf[, c(1,ids)]
     
@@ -581,7 +595,7 @@ vcf_popsub <- function(vcf, pop, in_pop) {
 
 
 ################################
-#' @title vcf_sub
+#' @title vcf_sub_indivs
 #' @description subsets vcfR format data by individuals
 #' @author Tomas Hrbek December 2020
 #'
@@ -594,11 +608,11 @@ vcf_popsub <- function(vcf, pop, in_pop) {
 #' This function subsets the vcfR object by individuals, returning new vcfR object
 #'
 #' @example
-#' vcf_popsub(vcf = my_vcf, indiv = indivs_to_keep)
-#' vcf_popsub(my_vcf, indiv_to_keep)
+#' vcf_sub_indivs(vcf = my_vcf, indiv = indivs_to_keep)
+#' vcf_sub_indivs(my_vcf, indivs_to_keep)
 #'
 
-vcf_sub <- function(vcf, indiv) {
+vcf_sub_indivs <- function(vcf, indiv) {
     # read all sample names in vcf
     vcf_names <- colnames(vcf@gt)[-1]
     
