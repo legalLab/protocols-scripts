@@ -10,30 +10,32 @@ library("stringr")
 # requires the 'stringr' and 'ape' packages 
 # 
 
-hapCollapse <- function(data,collapseSubstrings,clean){
+hapCollapse <- function(data, collapseSubstrings = TRUE, clean = TRUE){
     source("https://raw.githubusercontent.com/legalLab/protocols-scripts/master/scripts/clean_dna.R")
     if(clean==TRUE){
-    data <- clean_dna(data)
+        data <- clean_dna(data)
     }
     else{
-    data <- as.list(data)
+        data <- as.list(data)
     }
     if(collapseSubstrings==TRUE){
-    # sort by length
-    data.ord <- data[order(mapply(length, data, SIMPLIFY=TRUE, USE.NAMES=FALSE), decreasing=TRUE)]
-    # make a copy to index later
-    data.ord.copy <- data.ord
-    # collapse into a strings
-    data.ord <- mapply(FUN=function(x) paste(x,collapse=""), as.character(data.ord), SIMPLIFY=TRUE, USE.NAMES=FALSE)
-    # get the indices of the first match to each seq (the longest)
-    ind <- unique(mapply(FUN=function(x) which(str_detect(string=data.ord, pattern=x) == TRUE)[1], data.ord, SIMPLIFY=TRUE, USE.NAMES=FALSE))
-    return(data.ord.copy[ind])
+        # sort by length
+        data.ord <- data[order(mapply(length, data, SIMPLIFY=TRUE, USE.NAMES=FALSE), decreasing=TRUE)]
+        # make a copy to index later
+        data.ord.copy <- data.ord
+        # collapse into a strings
+        data.ord <- mapply(FUN=function(x) paste(x,collapse=""), as.character(data.ord), SIMPLIFY=TRUE, USE.NAMES=FALSE)
+        # get the indices of the first match to each seq (the longest)
+        ind <- unique(mapply(FUN=function(x) which(str_detect(string=data.ord, pattern=x) == TRUE)[1], data.ord, SIMPLIFY=TRUE, USE.NAMES=FALSE))
+        
+        return(data.ord.copy[ind])
     }
     else{
-    data.copy <- data
-    data.char <- mapply(FUN=function(x) paste(x,collapse=""), as.character(data), SIMPLIFY=TRUE, USE.NAMES=FALSE)
-    dups <- duplicated(data)
-    data.keep <- data.copy[!dups]
-    return(data.keep)
+        data.copy <- data
+        data.char <- mapply(FUN=function(x) paste(x,collapse=""), as.character(data), SIMPLIFY=TRUE, USE.NAMES=FALSE)
+        dups <- duplicated(data)
+        data.keep <- data.copy[!dups]
+        
+        return(data.keep)
     }
 }
