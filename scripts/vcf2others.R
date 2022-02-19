@@ -46,7 +46,7 @@ vcf2migrate <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
     vcf <- vcf[is.biallelic(vcf), ]
     if (inc_missing == FALSE) {
         gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
+        vcf <- vcf[!rowSums(is.na(gt)), ]
     }
     vcf_list <- lapply(keep_pop, function(x) {
         vcf[, c(TRUE, x == ind_pop)]
@@ -181,7 +181,7 @@ vcf2arlequin <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = 
     vcf <- vcf[is.biallelic(vcf), ]
     if (inc_missing == FALSE) {
         gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
+        vcf <- vcf[!rowSums(is.na(gt)), ]
     }
     vcf_list <- lapply(keep_pop, function(x) {
         vcf[, c(TRUE, x == ind_pop)]
@@ -298,7 +298,7 @@ vcf2structure <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file =
     vcf <- vcf[is.biallelic(vcf), ]
     if (inc_missing == FALSE) {
         gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
+        vcf <- vcf[!rowSums(is.na(gt)), ]
     }
     vcf_list <- lapply(keep_pop, function(x) {
         vcf[, c(TRUE, x == ind_pop)]
@@ -482,7 +482,7 @@ vcf2snapp <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "sn
     vcf <- vcf[is.biallelic(vcf), ]
     if (inc_missing == FALSE) {
         gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
+        vcf <- vcf[!rowSums(is.na(gt)), ]
     }
     vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
     gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
@@ -542,7 +542,7 @@ vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "ne
     vcf <- vcf[is.biallelic(vcf), ]
     if (inc_missing == FALSE) {
         gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
+        vcf <- vcf[!rowSums(is.na(gt)), ]
     }
     vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
     gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
@@ -625,6 +625,36 @@ vcf_sub_indivs <- function(vcf, indiv) {
 
 
 ################################
+#' @title filter_missingness
+#' @description subsets vcfR format data by % missing data
+#' @author Tomas Hrbek February 2022
+#'
+#' @param vcf -> vcfR object
+#' @param miss_p -> max missing data per locus as decimal (numeric)
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function subsets the vcfR object by % missing data, returning new vcfR object
+#'
+#' @example
+#' filter_missingness(vcf = my_vcf, miss_p = miss_p)
+#' filter_missingness(my_vcf, miss_p)
+#'
+
+filter_missingness <- function(vcf, miss_p) {
+    gt <- extract.gt(vcf, convertNA = T)
+    # get number of samples in vcf
+    n_samples <- ncol(vcf@gt) - 1
+    
+    # keep only those loci with < % missing data
+    vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p), ]
+    
+    return(vcf)
+}
+
+
+################################
 #' @title filter_multiSNP
 #' @description subsets vcfR format data keeping only loci with 2+ SNPs
 #' @author Tomas Hrbek February 2022
@@ -651,5 +681,3 @@ filter_multiSNP <- function(vcf) {
     
     return(vcf)
 }
-
-
