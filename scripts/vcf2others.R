@@ -622,3 +622,34 @@ vcf_sub_indivs <- function(vcf, indiv) {
     
     return(vcf)
 }
+
+
+################################
+#' @title filter_multiSNP
+#' @description subsets vcfR format data keeping only loci with 2+ SNPs
+#' @author Tomas Hrbek February 2022
+#'
+#' @param vcf -> vcfR object
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function subsets the vcfR object keeping only loci with 2+ SNPs, returning new vcfR object
+#' Recommended as input for fineRADstructure analyses
+#'
+#' @example
+#' filter_multiSNP(vcf = my_vcf)
+#' filter_multiSNP(my_vcf)
+#'
+
+filter_multiSNP <- function(vcf) {
+    # read all loci names in vcf
+    chrom <- getCHROM(vcf)
+    
+    # keep only those loci with 2+ SNPs
+    vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]) , ]
+    
+    return(vcf)
+}
+
+
