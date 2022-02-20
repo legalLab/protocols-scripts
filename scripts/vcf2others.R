@@ -655,7 +655,7 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 
 
 ################################
-#' @title filter_multiSNP
+#' @title vcf_filter_multiSNP
 #' @description subsets vcfR format data keeping only loci with 2+ SNPs
 #' @author Tomas Hrbek February 2022
 #'
@@ -668,11 +668,11 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 #' Recommended as input for fineRADstructure analyses
 #'
 #' @example
-#' filter_multiSNP(vcf = my_vcf)
-#' filter_multiSNP(my_vcf)
+#' vcf_filter_multiSNP(vcf = my_vcf)
+#' vcf_filter_multiSNP(my_vcf)
 #'
 
-filter_multiSNP <- function(vcf) {
+vcf_filter_multiSNP <- function(vcf) {
     # read all loci names in vcf
     chrom <- getCHROM(vcf)
     
