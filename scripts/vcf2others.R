@@ -625,7 +625,7 @@ vcf_sub_indivs <- function(vcf, indiv) {
 
 
 ################################
-#' @title filter_missingness
+#' @title vcf_filter_missingness
 #' @description subsets vcfR format data by % missing data
 #' @author Tomas Hrbek February 2022
 #'
@@ -638,11 +638,11 @@ vcf_sub_indivs <- function(vcf, indiv) {
 #' This function subsets the vcfR object by % missing data, returning new vcfR object
 #'
 #' @example
-#' filter_missingness(vcf = my_vcf, miss_p = miss_p)
-#' filter_missingness(my_vcf, miss_p)
+#' vcf_filter_missingness(vcf = my_vcf, miss_p = miss_p)
+#' vcf_filter_missingness(my_vcf, miss_p)
 #'
 
-filter_missingness <- function(vcf, miss_p) {
+vcf_filter_missingness <- function(vcf, miss_p) {
     gt <- extract.gt(vcf, convertNA = T)
     # get number of samples in vcf
     n_samples <- ncol(vcf@gt) - 1
