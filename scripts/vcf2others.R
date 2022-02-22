@@ -588,7 +588,8 @@ vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "ne
 vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
     ids <- which(ind_pop %in% keep_pop)
     ids <- ids+1
-    vcf <- vcf[, c(1,ids)]
+    vcf <- vcf[, c(1,ids)] %>%
+        vcf_filter_invariant()
     
     return(vcf)
 }
@@ -618,7 +619,8 @@ vcf_sub_indivs <- function(vcf, indiv) {
     
     ids <- which(vcf_names %in% indiv)
     ids <- ids+1
-    vcf <- vcf[, c(1,ids)]
+    vcf <- vcf[, c(1,ids)] %>%
+        vcf_filter_invariant()
     
     return(vcf)
 }
@@ -649,6 +651,14 @@ vcf_filter_missingness <- function(vcf, miss_p) {
     
     # keep only those loci with < % missing data
     vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
+    
+    # print VCF matrix completeness
+    chrom <- getCHROM(vcf)
+    # keep only one SNP per locus
+    vcf1 <- vcf[!duplicated(chrom),]
+    gt <- extract.gt(vcf1, convertNA = T)
+    missing_p <- sum(is.na(gt)) / length(gt)
+    print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
     
     return(vcf)
 }
