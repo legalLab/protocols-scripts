@@ -648,7 +648,7 @@ vcf_filter_missingness <- function(vcf, miss_p) {
     n_samples <- ncol(vcf@gt) - 1
     
     # keep only those loci with < % missing data
-    vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p), ]
+    vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
     
     return(vcf)
 }
@@ -677,7 +677,39 @@ vcf_filter_multiSNP <- function(vcf) {
     chrom <- getCHROM(vcf)
     
     # keep only those loci with 2+ SNPs
-    vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]) , ]
+    vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]),]
+    
+    return(vcf)
+}
+
+
+################################
+#' @title vcf_filter_invariant
+#' @description remove invariant loci from vcfR format data
+#' @author Tomas Hrbek February 2022
+#'
+#' @param vcf -> vcfR object
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function removes invariant loci from the vcfR object
+#' This might be desirable after subsetting the vcf by individuals
+#'
+#' @example
+#' vcf_filter_invariant(vcf = my_vcf)
+#' vcf_filter_invariant(my_vcf)
+#'
+
+vcf_filter_invariant <- function(vcf) {
+    gt <- extract.gt(vcf, convertNA = T)
+    # remove invariant loci
+    y <- vector(length = nrow(gt))
+    for(i in 1:length(y)) {
+        # keep if num unique loci > 1
+        y[i] <- length(unique(na.omit(gt[i,]))) > 1
+    }
+    vcf <- vcf[y,]
     
     return(vcf)
 }
