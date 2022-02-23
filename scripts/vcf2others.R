@@ -723,3 +723,33 @@ vcf_filter_invariant <- function(vcf) {
     
     return(vcf)
 }
+
+
+################################
+#' @title vcf_filter_quality
+#' @description remove loci below quality threshold from vcfR format data
+#' @author Tomas Hrbek February 2022
+#'
+#' @param vcf -> vcfR object
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function removes below quality threshold loci from the vcfR object
+#' If no quality value present, uses locus rank instead (from discoSNP)
+#'
+#' @example
+#' vcf_filter_quality(vcf = my_vcf)
+#' vcf_filter_quality(my_vcf)
+#'
+
+vcf_filter_quality <- function(vcf, qual) {
+    if(any(is.na(getQUAL(vcf)))){
+        vcf@fix[,6] <- stringr::str_extract(vcf@fix[,8], "Rk=[0-9|.]*") %>%
+            stringr::str_extract("[^Rk=]+")
+    }
+    # keep only those loci with minimum quality
+    vcf <- vcf[getQUAL(vcf) >= qual,]
+    
+    return(vcf)
+}
