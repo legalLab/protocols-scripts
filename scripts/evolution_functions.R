@@ -322,8 +322,8 @@ summarize_evolve <- function(genotypes, fitness, gens, Ne = 0, drift = FALSE, re
     evol <- evolve(genotypes, fitness, gens, Ne, drift)
     tmp_matrix[rep,] <- as.matrix(evol[gens, c(1:6, 13, 17:19)])
   }
-  sum_matrix[1,1:10] <- apply(tmp_matrix, 2, mean)
-  sum_matrix[2,1:10] <- apply(tmp_matrix, 2, sd)
+  sum_matrix[1,1:10] <- round(apply(tmp_matrix, 2, mean), 3)
+  sum_matrix[2,1:10] <- round(apply(tmp_matrix, 2, sd), 3)
   sum_matrix[1,11:13] <- apply(tmp_matrix[,8:10], 2, function(x) sum(x == 1))
   sum_matrix[1,17] <- sum(apply(tmp_matrix[,c(8,9,10)], 1, function(x) sum(x != 0) == 3))
   sum_matrix[1,14] <- sum(apply(tmp_matrix[,c(8,9)], 1, function(x) sum(x != 0) == 2)) - sum_matrix[1,17]
