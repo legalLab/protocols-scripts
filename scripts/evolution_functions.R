@@ -319,7 +319,7 @@ summarize_evolve <- function(genotypes, fitness, gens, Ne = 0, drift = FALSE, re
   tmp_matrix <- matrix(nrow = reps, ncol = 10)
   sum_matrix <- matrix(nrow = 2, ncol = 17)
   for(rep in 1:reps) {
-    evol <- evolve(genotypes, fitness, gens, Ne, TRUE)
+    evol <- evolve(genotypes, fitness, gens, Ne, drift)
     tmp_matrix[rep,] <- as.matrix(evol[gens, c(1:6, 13, 17:19)])
   }
   sum_matrix[1,1:10] <- apply(tmp_matrix, 2, mean)
