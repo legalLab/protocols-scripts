@@ -276,7 +276,8 @@ evolve <- function(genotypes, fitness, gens, Ne = 0, drift = FALSE) {
 plot_alleles <- function(x) {
   par(mar = c(5.1, 4.1, 4.1, 2.1))
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$fA, type = 'l', ylim = c(0,1), xlab = 'generations', ylab = 'allelic frequencies')
+  matplot(x$fA, type = 'l', ylim = c(0,1), main = 'Allelic Frequencies', 
+          xlab = 'generations', ylab = 'allelic frequencies')
   matlines(x$fS, type = 'l', col = 'red')
   matlines(x$fC, type = 'l', col = 'blue')
   legend(1.07*nrow(x), 1, c('fA', 'fS', 'fC'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
@@ -289,7 +290,8 @@ plot_alleles <- function(x) {
 plot_genotypes <- function(x) {
   par(mar = c(5.1, 4.1, 4.1, 2.1))
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$fAA, type = 'l', ylim = c(0,1), xlab = 'generations', ylab = 'genotypic frequencies')
+  matplot(x$fAA, type = 'l', ylim = c(0,1), main = 'Genotypic Frequencies', 
+          xlab = 'generations', ylab = 'genotypic frequencies')
   matlines(x$fAS, type = 'l', col = 'red')
   matlines(x$fAC, type = 'l', col = 'blue')
   matlines(x$fSS, type = 'l', col = 'green')
@@ -306,7 +308,8 @@ plot_genotypes <- function(x) {
 plot_fitness <- function(x) {
   par(mar = c(5.1, 4.1, 4.1, 2.1))
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$w, type = 'l', ylim = c(0,max(x$w)*1.1), xlab = 'generations', ylab = 'fitness', col = 'green')
+  matplot(x$w, type = 'l', ylim = c(0,max(x$w)*1.1), main = 'Population Fitness', 
+          xlab = 'generations', ylab = 'fitness', col = 'green')
   legend(1.07*nrow(x), 1, 'w', cex = 0.8, col = 'green', lty = 1)
   
   return(invisible(NULL)) #just to keep things honest
