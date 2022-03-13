@@ -124,7 +124,7 @@ add_plot_sir <- function(df) {
 }
 
 
-------------------------------
+#------------------------------
 # plot results of one stochastic SIR run
   
 multi_plot_sir <- function(N, t, b, a, reps) {
