@@ -17,21 +17,20 @@ sir_det <- function(N, t, b, a){
   #a is rate of recovery
   
   for (i in 2:t){
-    if (sir_m[i-1,2] <= b*sir_m[i-1,2]*sir_m[i-1,3]){ #if # newly infected > susceptible (WHY *sir_m[i-1,3])
+    if (sir_m[i-1,1] <= b*sir_m[i-1,1]*sir_m[i-1,1]){ #if # newly infected > susceptible (WHY *sir_m[i-1,3])
       # S = 0 if # newly infected individuals > S in the previous iteration
-      sir_m[i,2] <- 0
+      sir_m[i,1] <- 0
       # I = I in the previous timestep + S in the previous iteration - newly recovered individuals in the previous iteration
-      sir_m[i,3] <- sir_m[i-1,3] + sir_m[i-1,2] - a*sir_m[i-1,3]
+      sir_m[i,2] <- sir_m[i-1,2] + sir_m[i-1,1] - a*sir_m[i-1,2]
     }
     else{
       # S = S in the previous iteration - newly infected individuals in the previous iteration
-      sir_m[i,2] <- sir_m[i-1,2] - b*sir_m[i-1,2]*sir_m[i-1,3]
+      sir_m[i,1] <- sir_m[i-1,1] - b*sir_m[i-1,1]*sir_m[i-1,2]
       # I = I in the previous timestep + newly infected individuals in the previous iteration - newly recovered individuals in the previous iteration
-      sir_m[i,3] <- sir_m[i-1,3] + b*sir_m[i-1,2]*sir_m[i-1,3] - a*sir_m[i-1,3]
+      sir_m[i,2] <- sir_m[i-1,2] + b*sir_m[i-1,1]*sir_m[i-1,2] - a*sir_m[i-1,2]
     }
     # R = R in the previous iteration + newly recovered individuals in the previous iteration
-    sir_m[i,4] <- sir_m[i-1,4] + a*sir_m[i-1,3]
-    sir_m[i,1] <- i
+    sir_m[i,3] <- sir_m[i-1,3] + a*sir_m[i-1,2]
   }
   return(as.data.frame(sir_m))
 }
@@ -126,7 +125,6 @@ add_plot_sir <- function(df) {
 
 #------------------------------
 # plot results of one stochastic SIR run
-  
 multi_plot_sir <- function(N, t, b, a, reps) {
   # run x number of stochastic SIR simulations and plot
   plot_SIR(sir_stoch(N, t, b, a))	
@@ -137,7 +135,7 @@ multi_plot_sir <- function(N, t, b, a, reps) {
 
 
 #------------------------------
-#error_plot
+# error_plot
 error_plot <- function(df){
   # takes the output from the super_summary and plots
   # the S,I,R classes with sd error bars for each timepoint
