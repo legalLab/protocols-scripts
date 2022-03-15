@@ -17,7 +17,7 @@ sir_det <- function(N, t, b, a){
   #a is rate of recovery
   
   for (i in 2:t){
-    if (sir_m[i-1,1] <= b*sir_m[i-1,1]*sir_m[i-1,1]){ #if # newly infected > susceptible (WHY *sir_m[i-1,3])
+    if (sir_m[i-1,1] <= b*sir_m[i-1,1]*sir_m[i-1,2]){ #if # newly infected > susceptible (WHY *sir_m[i-1,3])
       # S = 0 if # newly infected individuals > S in the previous iteration
       sir_m[i,1] <- 0
       # I = I in the previous timestep + S in the previous iteration - newly recovered individuals in the previous iteration
