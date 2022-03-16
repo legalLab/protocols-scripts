@@ -86,15 +86,14 @@ SIR <- function(n, t, b, a) {
 # the stochastic SIR function
 sir_stoch <- function(N, t, b, a) {
   df <- SIR(N, t, b, a)
-  sir_m <- matrix(ncol=3, nrow=t)
+  sir_m <- matrix(nrow = t, ncol = 3)
   colnames(sir_m) <- c("S","I","R")
   rownames(sir_m) <- c(1:t)
   
-  for (i in 1:t){
-    sir_m[i, "S"] <- sum((df[i, ] == "S"))
-    sir_m[i, "I"] <- sum((df[i, ] == "I"))
-    sir_m[i, "R"] <- sum((df[i, ] == "R"))
-  }
+  sir_m[, "S"] <- apply(df == "S", 1, sum)
+  sir_m[, "I"] <- apply(df == "I", 1, sum)
+  sir_m[, "R"] <- apply(df == "R", 1, sum)
+  
   return(as.data.frame(sir_m))
 }
 
@@ -104,11 +103,16 @@ sir_stoch <- function(N, t, b, a) {
 plot_sir <- function(df) {
   # takes input matrix with cols of iterations, S, I, R
   # and creates a plot with all three lines
-  # S = black, I = red, R = green
+  # S = black, I = red, R = blue
   t <- c(1:nrow(df))
-  matplot(t, df$S, xlab='iterations', ylab='number', type='l', col=1, ylim = c(-1,max(df$S)))
-  matlines(t, df$I, col=2)
-  matlines(t, df$R, col=3)
+  par(mar = c(5.1, 4.1, 4.1, 2.1))
+  par(xpd=T, mar=par()$mar+c(0,0,0,3))
+  matplot(t, df$S, main = 'SIR Cases', xlab='time steps', ylab='number', type='l', col=1, ylim = c(-1,max(df$S)))
+  matlines(t, df$I, type = 'l', col = 'red')
+  matlines(t, df$R, type = 'l', col = 'blue')
+  legend(1.07*nrow(df), max(df$S), c('S', 'I', 'R'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
+  
+  return(invisible(NULL)) #just to keep things honest
 }
 
 
@@ -127,30 +131,36 @@ add_plot_sir <- function(df) {
 # plot results of one stochastic SIR run
 multi_plot_sir <- function(N, t, b, a, reps) {
   # run x number of stochastic SIR simulations and plot
-  plot_SIR(sir_stoch(N, t, b, a))	
+  plot_sir(sir_stoch(N, t, b, a))	
   for(i in 2:reps) {
-    add_plot_SIR(sir_stoch(N, t, b, a))	
+    add_plot_sir(sir_stoch(N, t, b, a))	
   }
+  return(invisible(NULL)) #just to keep things honest
 }
 
 
 #------------------------------
 # error_plot
-error_plot <- function(df){
+error_plot_sir <- function(df){
   # takes the output from the super_summary and plots
   # the S,I,R classes with sd error bars for each timepoint
   
   t <- c(1:nrow(df))
+  par(mar = c(5.1, 4.1, 4.1, 2.1))
+  par(xpd=T, mar=par()$mar+c(0,0,0,3))
   
-  matplot(t, df$S, xlab='time steps', ylab='number', type='l', col=1, ylim = max(df$S))
-  segments(t, df$S-df$sdS, t, df$S+df$sdS)
+  matplot(t, df$muS,  main = 'SIR Cases', xlab='time steps', ylab='number', type='l', col=1, ylim = c(-1.5,max(df$muS)+2.5))
+  segments(t, df$muS-df$sdS, t, df$muS+df$sdS)
   
-  matlines(t, df$I, col=2)
-  segments(t, df$I-df$sdI, t, df$I+df$sdI, col=2)
+  matlines(t, df$muI, type = 'l', col = 'red')
+  segments(t, df$muI-df$sdI, t, df$muI+df$sdI, col = 'red')
   
-  matlines(t, df$R, col=3)
-  segments(t, df$R-df$sdR, t, df$R+df$sdR, col=3)
+  matlines(t, df$muR, type = 'l', col = 'blue')
+  segments(t, df$muR-df$sdR, t, df$muR+df$sdR, col = 'blue')
   
+  legend(1.07*nrow(df), max(df$muS), c('S', 'I', 'R'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
+  
+  return(invisible(NULL)) #just to keep things honest
 }
 
 
@@ -175,13 +185,13 @@ summarize_sir_stoch <- function(N, t, b, a, reps) {
   for(i in 1:reps) {
     df <- sir_stoch(N, t, b, a)
     #print(i)
-    S_val[, i] <- df[, 1]
-    I_val[, i] <- df[, 2]
-    R_val[, i] <- df[, 3]
+    S_val[, i] <- df$S
+    I_val[, i] <- df$I
+    R_val[, i] <- df$R
   }
   
   # creates an overall summary matrix for the average and stdev for SIR values at each timestep across all runs
-  df <- as.data.frame(matrix(nrow=t, ncol=6))
+  df <- as.data.frame(matrix(nrow = t, ncol = 6))
   colnames(df) <- c("muS","sdS","muI","sdI","muR","sdR")
   rownames(df) <- c(1:t)
   
