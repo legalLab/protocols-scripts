@@ -166,7 +166,7 @@ error_plot_sir <- function(df){
 
 #------------------------------
 # the super_summary function:
-summarize_sir_stoch <- function(N, t, b, a, reps) {
+summarize_sir <- function(N, t, b, a, reps) {
   # creates a series of stochasticSIR reps that
   # are summarized by the summarize_run function and
   # then loads the S,I,R counts from each timestep into 
