@@ -140,7 +140,7 @@ multi_plot_sir <- function(N, t, b, a, reps) {
 
 
 #------------------------------
-# error_plot
+# plot results of summarize_sir
 error_plot_sir <- function(df){
   # takes the output from the super_summary and plots
   # the S,I,R classes with sd error bars for each timepoint
