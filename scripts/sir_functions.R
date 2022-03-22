@@ -65,7 +65,7 @@ SIR <- function(n, t, b, a) {
       }
       # else if individual is infected can become removed or stays infected
       else if (dm[i-1,j] == "I") {
-        if(runif(1) <= b) {
+        if(runif(1) <= a) {
           dm[i,j] <- "R"
         }
         else {
@@ -146,11 +146,12 @@ error_plot_sir <- function(df){
   # the S,I,R classes with sd error bars for each timepoint
   
   t <- c(1:nrow(df))
+  N <- sum(df[1,])
   par(mar = c(5.1, 4.1, 4.1, 2.1))
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
   
   matplot(t, df$muS,  main = 'SIR Cases', xlab='time steps', ylab='number of individuals', type='l', col=1, ylim = c(-1.5,max(df$muS)+2.5))
-  segments(t, df$muS-df$sdS, t, df$muS+df$sdS)
+  segments(t, apply(df, 1, function(x) {if (df$muS-df$sdS < 0) {0} else {df$muS-df$sdS}}), t, apply(df, 1, function(x) {if (df$muS+df$sdS > N) {N} else {df$muS+df$sdS}}))
   
   matlines(t, df$muI, type = 'l', col = 'red')
   segments(t, df$muI-df$sdI, t, df$muI+df$sdI, col = 'red')
