@@ -151,7 +151,7 @@ error_plot_sir <- function(df){
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
   
   matplot(t, df$muS,  main = 'SIR Cases', xlab='time steps', ylab='number of individuals', type='l', col=1, ylim = c(-1.5,max(df$muS)+2.5))
-  segments(t, apply(df, 1, function(x) {if (df$muS-df$sdS < 0) {0} else {df$muS-df$sdS}}), t, apply(df, 1, function(x) {if (df$muS+df$sdS > N) {N} else {df$muS+df$sdS}}))
+  segments(t, df$muS-df$sdS, t, df$muS+df$sdS)
   
   matlines(t, df$muI, type = 'l', col = 'red')
   segments(t, df$muI-df$sdI, t, df$muI+df$sdI, col = 'red')
@@ -205,12 +205,12 @@ summarize_sir <- function(N, t, b, a, reps) {
   R_rowstdev <- apply(R_val, 1, sd)
   
   # assign the values from the mean/sd vectors into the summary matrix
-    df$muS <- round(S_rowmeans, 1)
-    df$sdS <- round(S_rowstdev, 2)
-    df$muI <- round(I_rowmeans, 1)
-    df$sdI <- round(I_rowstdev, 2)
-    df$muR <- round(R_rowmeans, 1)
-    df$sdR <- round(R_rowstdev, 2)
+  df$muS <- round(S_rowmeans, 1)
+  df$sdS <- round(S_rowstdev, 2)
+  df$muI <- round(I_rowmeans, 1)
+  df$sdI <- round(I_rowstdev, 2)
+  df$muR <- round(R_rowmeans, 1)
+  df$sdR <- round(R_rowstdev, 2)
     
   return(df)
 }
