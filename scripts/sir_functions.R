@@ -63,7 +63,7 @@ SIR <- function(n, t, b, a) {
         else {dm[i,j] <- dm[i-1,j] # S
         }
       }
-      # else if individual is infected can become removed or stays infected
+      # else if individual is infected can become removed or stays infected 
       else if (dm[i-1,j] == "I") {
         if(runif(1) <= a) {
           dm[i,j] <- "R"
