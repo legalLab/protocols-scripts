@@ -22,8 +22,7 @@ sir_det <- function(N, t, b, a){
       sir_m[i,1] <- 0
       # I = I in the previous timestep + S in the previous iteration - newly recovered individuals in the previous iteration
       sir_m[i,2] <- sir_m[i-1,2] + sir_m[i-1,1] - a*sir_m[i-1,2]
-    }
-    else{
+    } else {
       # S = S in the previous iteration - newly infected individuals in the previous iteration
       sir_m[i,1] <- sir_m[i-1,1] - b*sir_m[i-1,1]*sir_m[i-1,2]
       # I = I in the previous timestep + newly infected individuals in the previous iteration - newly recovered individuals in the previous iteration
@@ -59,16 +58,15 @@ SIR <- function(n, t, b, a) {
       if (dm[i-1,j] == "S") {
         if (runif(1) <= (1-(1-b)^inf)) {
           dm[i,j] <- "I"
-        }
-        else {dm[i,j] <- dm[i-1,j] # S
+        } else {
+          dm[i,j] <- dm[i-1,j] # S
         }
       }
       # else if individual is infected can become removed or stays infected 
       else if (dm[i-1,j] == "I") {
         if(runif(1) <= a) {
           dm[i,j] <- "R"
-        }
-        else {
+        } else {
           dm[i,j] <- dm[i-1,j]	
         }
       }
