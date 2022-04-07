@@ -106,8 +106,8 @@ plot_sir <- function(df) {
   par(mar = c(5.1, 4.1, 4.1, 2.1))
   par(xpd=T, mar=par()$mar+c(0,0,0,3))
   matplot(t, df$S, main = 'SIR Cases', xlab='time steps', ylab='number of individuals', type='l', col=1, ylim = c(-1,max(df$S)))
-  matlines(t, df$I, type = 'l', col = 'red')
   matlines(t, df$R, type = 'l', col = 'blue')
+  matlines(t, df$I, type = 'l', col = 'red')
   legend(1.07*nrow(df), max(df$S), c('S', 'I', 'R'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
   
   return(invisible(NULL)) #just to keep things honest
@@ -151,11 +151,11 @@ error_plot_sir <- function(df){
   matplot(t, df$muS,  main = 'SIR Cases', xlab='time steps', ylab='number of individuals', type='l', col=1, ylim = c(-1.5,max(df$muS)+2.5))
   segments(t, df$muS-df$sdS, t, df$muS+df$sdS)
   
-  matlines(t, df$muI, type = 'l', col = 'red')
-  segments(t, df$muI-df$sdI, t, df$muI+df$sdI, col = 'red')
-  
   matlines(t, df$muR, type = 'l', col = 'blue')
   segments(t, df$muR-df$sdR, t, df$muR+df$sdR, col = 'blue')
+  
+  matlines(t, df$muI, type = 'l', col = 'red')
+  segments(t, df$muI-df$sdI, t, df$muI+df$sdI, col = 'red')
   
   legend(1.07*nrow(df), max(df$muS), c('S', 'I', 'R'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
   
