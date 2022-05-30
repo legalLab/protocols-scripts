@@ -601,7 +601,7 @@ vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
 #' @author Tomas Hrbek December 2020
 #'
 #' @param vcf -> vcfR object
-#' @param indiv -> individuals to retain in vcf (factor)
+#' @param indiv -> individuals to retain/drop in vcf (factor)
 #' @export nothing
 #' @return subsetted vcfR object
 #'
@@ -609,7 +609,8 @@ vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
 #' This function subsets the vcfR object by individuals, returning new vcfR object
 #'
 #' @example
-#' vcf_sub_indivs(vcf = my_vcf, indiv = indivs_to_keep)
+#' vcf_sub_indivs(vcf = my_vcf, indiv = indivs_to_keep, whitelist = TRUE)
+#' vcf_sub_indivs(vcf = my_vcf, indiv = indivs_to_drop, whitelist = FALSE)
 #' vcf_sub_indivs(my_vcf, indivs_to_keep)
 #'
 
