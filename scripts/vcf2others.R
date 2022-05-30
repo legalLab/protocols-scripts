@@ -572,7 +572,7 @@ vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "ne
 #'
 #' @param vcf -> vcfR object
 #' @param ind_pop -> population assignment of individuals in vcf (factor)
-#' @param keep_pop -> population(s) of interest to include in vcf infile (factor)
+#' @param keep_pop -> population(s) of interest to include/exclude in vcf infile (factor)
 #' @export nothing
 #' @return subsetted vcfR object
 #'
@@ -581,15 +581,22 @@ vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "ne
 #' assigned to one or more populations), returning new vcfR object
 #'
 #' @example
-#' vcf_sub_pops(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers)
+#' vcf_sub_pops(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, whitelist = TRUE)
+#' vcf_sub_pops(vcf = my_vcf, ind_pop = ind_pop, keep_pop = non_keepers, whitelist = FALSE)
 #' vcf_sub_pops(my_vcf, ind_pop, keepers)
 #'
 
-vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
+vcf_sub_pops <- function(vcf, ind_pop, keep_pop, whitelist = TRUE) {
     ids <- which(ind_pop %in% keep_pop)
     ids <- ids+1
-    vcf <- vcf[, c(1,ids)] %>%
-        vcf_filter_invariant()
+    if (whitelist == TRUE){
+        vcf <- vcf[, c(1,ids)] %>%
+            vcf_filter_invariant()
+    }
+    else {
+        vcf <- vcf[, -c(ids)] %>%
+            vcf_filter_invariant()
+    }
     
     return(vcf)
 }
