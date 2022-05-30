@@ -613,14 +613,20 @@ vcf_sub_pops <- function(vcf, ind_pop, keep_pop) {
 #' vcf_sub_indivs(my_vcf, indivs_to_keep)
 #'
 
-vcf_sub_indivs <- function(vcf, indiv) {
+vcf_sub_indivs <- function(vcf, indiv, whitelist = TRUE) {
     # read all sample names in vcf
     vcf_names <- colnames(vcf@gt)[-1]
     
     ids <- which(vcf_names %in% indiv)
     ids <- ids+1
-    vcf <- vcf[, c(1,ids)] %>%
-        vcf_filter_invariant()
+    if (whitelist == TRUE){
+        vcf <- vcf[, c(1,ids)] %>%
+            vcf_filter_invariant()
+    }
+    else {
+        vcf <- vcf[, -c(ids)] %>%
+            vcf_filter_invariant()
+    }
     
     return(vcf)
 }
