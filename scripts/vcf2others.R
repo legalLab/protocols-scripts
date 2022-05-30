@@ -653,9 +653,7 @@ vcf_filter_missingness <- function(vcf, miss_p) {
     vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
     
     # print VCF matrix completeness
-    chrom <- getCHROM(vcf)
-    # keep only one SNP per locus
-    vcf1 <- vcf[!duplicated(chrom),]
+    vcf1 <- vcf_filter_oneSNP(vcf)
     gt <- extract.gt(vcf1, convertNA = T)
     missing_p <- sum(is.na(gt)) / length(gt)
     print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
@@ -715,7 +713,7 @@ vcf_filter_oneSNP <- function(vcf) {
     # read all loci names in vcf
     chrom <- getCHROM(vcf)
     
-    # keep only those loci with 2+ SNPs
+    # keep only those loci with 1 SNP
     vcf <- vcf[!duplicated(chrom),]
     
     return(vcf)
