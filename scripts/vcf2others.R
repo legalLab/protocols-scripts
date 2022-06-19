@@ -3,6 +3,7 @@
 # functions to convert vcf data to other formats
 # depends on vcfR (should be loaded since vcfR object [vcf file] is passed to these functions)
 # depends on ape to generate nexus file (vcf2nexus, vcf2snapp)
+# depends on dplyr (vcf_filter_multiSNP)
 
 
 ################################
@@ -686,20 +687,36 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 #' @return subsetted vcfR object
 #'
 #' @details
-#' This function subsets the vcfR object keeping only loci with 2+ SNPs, returning new vcfR object
+#' This function subsets the vcfR object keeping only loci with between min and max # of SNPs
+#' per locus, returning new vcfR object
+#' default min = 2 and max = 5 SNPs per locus
 #' Recommended as input for fineRADstructure analyses
 #'
 #' @example
+#' vcf_filter_multiSNP(vcf = my_vcf, minS = 2, maxS = 5)
 #' vcf_filter_multiSNP(vcf = my_vcf)
 #' vcf_filter_multiSNP(my_vcf)
 #'
 
-vcf_filter_multiSNP <- function(vcf) {
+vcf_filter_multiSNP <- function(vcf, minS = 2, maxS = 5) {
     # read all loci names in vcf
     chrom <- getCHROM(vcf)
+    id <-  getID(vcf)
+    chrom_id <- cbind(chrom, id) %>%
+      as_tibble()
+    
+    keeper <- chrom_id %>%
+      count(chrom) %>%
+      filter(n >= minS & n <= maxS) %>%
+      select(-n) %>%
+      as.matrix() %>%
+      as.character()
+    
+    # keep only those loci with between minS and maxS SNPs
+    vcf <- vcf[chrom %in% keeper, ]
     
     # keep only those loci with 2+ SNPs
-    vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]),]
+    # vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]),]
     
     return(vcf)
 }
