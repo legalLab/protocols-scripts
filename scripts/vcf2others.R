@@ -34,113 +34,113 @@
 vcf2migrate <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
                          out_file = "migrateN_infile.txt", method = "N")
 {
-    method <- match.arg(method, c("N", "H"), several.ok = FALSE)
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-            class(vcf), "instead"))
+  method <- match.arg(method, c("N", "H"), several.ok = FALSE)
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf_list <- lapply(keep_pop, function(x) {
+    vcf[, c(TRUE, x == ind_pop)]
+  })
+  names(vcf_list) <- keep_pop
+  
+  if (method == "N") {
+    myHeader <- c("N", length(vcf_list), nrow(vcf_list[[1]]))
+    pop_list <- vector(mode = "list", length = length(vcf_list))
+    names(pop_list) <- names(vcf_list)
+    for (i in 1:length(vcf_list)) {
+      gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
+      gt[gt == "."] <- "?/?"
+      allele1 <- apply(gt, MARGIN = 2, function(x) {
+        substr(x, 1, 1)
+      })
+      rownames(allele1) <- NULL
+      allele1 <- t(allele1)
+      rownames(allele1) <- paste(rownames(allele1), "_1", 
+                                 sep = "")
+      allele2 <- apply(gt, MARGIN = 2, function(x) {
+        substr(x, 3, 3)
+      })
+      rownames(allele2) <- NULL
+      allele2 <- t(allele2)
+      rownames(allele2) <- paste(rownames(allele2), "_2", 
+                                 sep = "")
+      pop_list[[i]][[1]] <- allele1
+      pop_list[[i]][[2]] <- allele2
     }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-            class(ind_pop), "and", class(keep_pop), "instead"))
+    write(myHeader, file = out_file, ncolumns = length(myHeader), 
+          sep = "\t")
+    write(rep(1, times = ncol(pop_list[[1]][[1]])), file = out_file, 
+          ncolumns = ncol(pop_list[[1]][[1]]), append = TRUE, 
+          sep = "\t")
+    for (i in 1:length(pop_list)) {
+      popName <- c(2 * nrow(pop_list[[i]][[1]]), names(pop_list)[i])
+      write(popName, file = out_file, ncolumns = length(popName), 
+            append = TRUE, sep = "\t")
+      for (j in 1:ncol(pop_list[[i]][[1]])) {
+        utils::write.table(pop_list[[i]][[1]][, j], file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = TRUE, 
+                           col.names = FALSE)
+        utils::write.table(pop_list[[i]][[2]][, j], file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = TRUE, 
+                           col.names = FALSE)
+      }
     }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  else if (method == "H") {
+    myHeader <- c("H", length(vcf_list), nrow(vcf_list[[1]]))
+    pop_list <- vector(mode = "list", length = length(vcf_list))
+    names(pop_list) <- names(vcf_list)
+    for (i in 1:length(vcf_list)) {
+      myMat <- matrix(nrow = nrow(vcf_list[[i]]), ncol = 6)
+      var_info <- as.data.frame(vcf_list[[i]]@fix[, 1:2, 
+                                                  drop = FALSE])
+      var_info$mask <- TRUE
+      gt <- extract.gt(vcf_list[[i]])
+      popSum <- .gt_to_popsum(var_info = var_info, gt = gt)
+      myMat[, 1] <- paste(vcf_list[[i]]@fix[, "CHROM"], 
+                          vcf_list[[i]]@fix[, "POS"], sep = "_")
+      myMat[, 2] <- vcf_list[[i]]@fix[, "REF"]
+      myMat[, 4] <- vcf_list[[i]]@fix[, "ALT"]
+      myMat[, 3] <- unlist(lapply(strsplit(as.character(popSum$Allele_counts), 
+                                           split = ",", fixed = TRUE), function(x) {
+                                             x[1]
+                                           }))
+      myMat[, 3][is.na(myMat[, 3])] <- 0
+      myMat[, 5] <- unlist(lapply(strsplit(as.character(popSum$Allele_counts), 
+                                           split = ",", fixed = TRUE), function(x) {
+                                             x[2]
+                                           }))
+      myMat[, 5][is.na(myMat[, 5])] <- 0
+      myMat[, 6] <- as.numeric(myMat[, 3]) + as.numeric(myMat[, 
+                                                              5])
+      pop_list[[i]] <- myMat
     }
-    vcf_list <- lapply(keep_pop, function(x) {
-        vcf[, c(TRUE, x == ind_pop)]
-    })
-    names(vcf_list) <- keep_pop
-
-    if (method == "N") {
-        myHeader <- c("N", length(vcf_list), nrow(vcf_list[[1]]))
-        pop_list <- vector(mode = "list", length = length(vcf_list))
-        names(pop_list) <- names(vcf_list)
-        for (i in 1:length(vcf_list)) {
-            gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
-            gt[gt == "."] <- "?/?"
-            allele1 <- apply(gt, MARGIN = 2, function(x) {
-                substr(x, 1, 1)
-            })
-            rownames(allele1) <- NULL
-            allele1 <- t(allele1)
-            rownames(allele1) <- paste(rownames(allele1), "_1", 
-                sep = "")
-            allele2 <- apply(gt, MARGIN = 2, function(x) {
-                substr(x, 3, 3)
-            })
-            rownames(allele2) <- NULL
-            allele2 <- t(allele2)
-            rownames(allele2) <- paste(rownames(allele2), "_2", 
-                sep = "")
-            pop_list[[i]][[1]] <- allele1
-            pop_list[[i]][[2]] <- allele2
-        }
-        write(myHeader, file = out_file, ncolumns = length(myHeader), 
-            sep = "\t")
-        write(rep(1, times = ncol(pop_list[[1]][[1]])), file = out_file, 
-            ncolumns = ncol(pop_list[[1]][[1]]), append = TRUE, 
-            sep = "\t")
-        for (i in 1:length(pop_list)) {
-            popName <- c(2 * nrow(pop_list[[i]][[1]]), names(pop_list)[i])
-            write(popName, file = out_file, ncolumns = length(popName), 
-                  append = TRUE, sep = "\t")
-            for (j in 1:ncol(pop_list[[i]][[1]])) {
-                utils::write.table(pop_list[[i]][[1]][, j], file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = TRUE, 
-                                   col.names = FALSE)
-                utils::write.table(pop_list[[i]][[2]][, j], file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = TRUE, 
-                                   col.names = FALSE)
-            }
-        }
+    write(myHeader, file = out_file, ncolumns = length(myHeader), 
+          sep = "\t")
+    for (i in 1:length(pop_list)) {
+      popName <- c(pop_list[[i]][1, 6], names(pop_list[i]))
+      write(popName, file = out_file, ncolumns = length(popName), 
+            append = TRUE, sep = "\t")
+      utils::write.table(pop_list[[i]], file = out_file, 
+                         append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                         col.names = FALSE)
     }
-    else if (method == "H") {
-        myHeader <- c("H", length(vcf_list), nrow(vcf_list[[1]]))
-        pop_list <- vector(mode = "list", length = length(vcf_list))
-        names(pop_list) <- names(vcf_list)
-        for (i in 1:length(vcf_list)) {
-            myMat <- matrix(nrow = nrow(vcf_list[[i]]), ncol = 6)
-            var_info <- as.data.frame(vcf_list[[i]]@fix[, 1:2, 
-                drop = FALSE])
-            var_info$mask <- TRUE
-            gt <- extract.gt(vcf_list[[i]])
-            popSum <- .gt_to_popsum(var_info = var_info, gt = gt)
-            myMat[, 1] <- paste(vcf_list[[i]]@fix[, "CHROM"], 
-                vcf_list[[i]]@fix[, "POS"], sep = "_")
-            myMat[, 2] <- vcf_list[[i]]@fix[, "REF"]
-            myMat[, 4] <- vcf_list[[i]]@fix[, "ALT"]
-            myMat[, 3] <- unlist(lapply(strsplit(as.character(popSum$Allele_counts), 
-                split = ",", fixed = TRUE), function(x) {
-                x[1]
-            }))
-            myMat[, 3][is.na(myMat[, 3])] <- 0
-            myMat[, 5] <- unlist(lapply(strsplit(as.character(popSum$Allele_counts), 
-                split = ",", fixed = TRUE), function(x) {
-                x[2]
-            }))
-            myMat[, 5][is.na(myMat[, 5])] <- 0
-            myMat[, 6] <- as.numeric(myMat[, 3]) + as.numeric(myMat[, 
-                5])
-            pop_list[[i]] <- myMat
-        }
-        write(myHeader, file = out_file, ncolumns = length(myHeader), 
-            sep = "\t")
-        for (i in 1:length(pop_list)) {
-            popName <- c(pop_list[[i]][1, 6], names(pop_list[i]))
-            write(popName, file = out_file, ncolumns = length(popName), 
-                append = TRUE, sep = "\t")
-            utils::write.table(pop_list[[i]], file = out_file, 
-                append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                col.names = FALSE)
-        }
-    }
-    else {
-        stop("You should never get here!")
-    }
-    return(invisible(NULL))
+  }
+  else {
+    stop("You should never get here!")
+  }
+  return(invisible(NULL))
 }
 
 
@@ -170,92 +170,92 @@ vcf2migrate <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 
 vcf2arlequin <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "arlequin.arp") 
 {
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-                   class(vcf), "instead"))
-    }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-                   class(ind_pop), "and", class(keep_pop), "instead"))
-    }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums(is.na(gt)), ]
-    }
-    vcf_list <- lapply(keep_pop, function(x) {
-        vcf[, c(TRUE, x == ind_pop)]
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf_list <- lapply(keep_pop, function(x) {
+    vcf[, c(TRUE, x == ind_pop)]
+  })
+  names(vcf_list) <- keep_pop
+  pop_list <- vector(mode = "list", length = length(vcf_list))
+  names(pop_list) <- names(vcf_list)
+  
+  for (i in 1:length(vcf_list)) {
+    gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
+    gt[gt == "."] <- "?/?"
+    allele1 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 1, 1)
     })
-    names(vcf_list) <- keep_pop
-    pop_list <- vector(mode = "list", length = length(vcf_list))
-    names(pop_list) <- names(vcf_list)
+    rownames(allele1) <- NULL
+    allele1 <- t(allele1)
+    rownames(allele1) <- paste(rownames(allele1), "_1", 
+                               sep = "")
+    allele2 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 3, 3)
+    })
+    rownames(allele2) <- NULL
+    allele2 <- t(allele2)
+    rownames(allele2) <- paste(rownames(allele2), "_2", 
+                               sep = "")
+    pop_list[[i]][[1]] <- allele1
+    pop_list[[i]][[2]] <- allele2
+  }
+  
+  write("[Profile]", file = out_file)
+  write("", file = out_file, append = TRUE)
+  write("Title = 'Generated by vcf2arlequin.R'", file = out_file, append = TRUE)
+  write(paste("NbSamples = ", length(vcf_list), sep = ""), file = out_file, append = TRUE)
+  write("GenotypicData = 1", file = out_file, append = TRUE)
+  write("LocusSeparator = WHITESPACE", file = out_file, append = TRUE)
+  write("GameticPhase = 0", file = out_file, append = TRUE)
+  write("MissingData = '?'", file = out_file, append = TRUE)
+  write("DataType = STANDARD", file = out_file, append = TRUE)
+  write("", file = out_file, append = TRUE)
+  write("[Data]", file = out_file, append = TRUE)
+  write("[[Samples]]", file = out_file, append = TRUE)
+  write("", file = out_file, append = TRUE)
+  write(paste("#There are ", ncol(pop_list[[i]][[1]]), " SNPs", sep = ""), file = out_file, append = TRUE)
+  write("", file = out_file, append = TRUE)
+  
+  for (i in 1:length(pop_list)) {
+    write(paste("SampleName = ", "'", names(pop_list)[i], "'", sep = ""), file = out_file, append = TRUE)
+    write(paste("SampleSize = ", nrow(pop_list[[i]][[1]]), sep = ""), file = out_file, append = TRUE)
+    write("SampleData={", file = out_file, append = TRUE)
     
-    for (i in 1:length(vcf_list)) {
-        gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
-        gt[gt == "."] <- "?/?"
-        allele1 <- apply(gt, MARGIN = 2, function(x) {
-            substr(x, 1, 1)
-        })
-        rownames(allele1) <- NULL
-        allele1 <- t(allele1)
-        rownames(allele1) <- paste(rownames(allele1), "_1", 
-                                   sep = "")
-        allele2 <- apply(gt, MARGIN = 2, function(x) {
-            substr(x, 3, 3)
-        })
-        rownames(allele2) <- NULL
-        allele2 <- t(allele2)
-        rownames(allele2) <- paste(rownames(allele2), "_2", 
-                                   sep = "")
-        pop_list[[i]][[1]] <- allele1
-        pop_list[[i]][[2]] <- allele2
+    for (j in 1:nrow(pop_list[[i]][[1]])) {
+      utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), "\t1\t", pop_list[[i]][[1]][j, ])), file = out_file, 
+                         append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                         col.names = FALSE)
+      utils::write.table(t(c("\t\t\t\t\t", pop_list[[i]][[2]][j, ])), file = out_file, 
+                         append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                         col.names = FALSE)
     }
-
-    write("[Profile]", file = out_file)
+    write("}", file = out_file, append = TRUE)
     write("", file = out_file, append = TRUE)
-    write("Title = 'Generated by vcf2arlequin.R'", file = out_file, append = TRUE)
-    write(paste("NbSamples = ", length(vcf_list), sep = ""), file = out_file, append = TRUE)
-    write("GenotypicData = 1", file = out_file, append = TRUE)
-    write("LocusSeparator = WHITESPACE", file = out_file, append = TRUE)
-    write("GameticPhase = 0", file = out_file, append = TRUE)
-    write("MissingData = '?'", file = out_file, append = TRUE)
-    write("DataType = STANDARD", file = out_file, append = TRUE)
-    write("", file = out_file, append = TRUE)
-    write("[Data]", file = out_file, append = TRUE)
-    write("[[Samples]]", file = out_file, append = TRUE)
-    write("", file = out_file, append = TRUE)
-    write(paste("#There are ", ncol(pop_list[[i]][[1]]), " SNPs", sep = ""), file = out_file, append = TRUE)
-    write("", file = out_file, append = TRUE)
-    
-    for (i in 1:length(pop_list)) {
-        write(paste("SampleName = ", "'", names(pop_list)[i], "'", sep = ""), file = out_file, append = TRUE)
-        write(paste("SampleSize = ", nrow(pop_list[[i]][[1]]), sep = ""), file = out_file, append = TRUE)
-        write("SampleData={", file = out_file, append = TRUE)
-
-        for (j in 1:nrow(pop_list[[i]][[1]])) {
-            utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), "\t1\t", pop_list[[i]][[1]][j, ])), file = out_file, 
-                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                           col.names = FALSE)
-            utils::write.table(t(c("\t\t\t\t\t", pop_list[[i]][[2]][j, ])), file = out_file, 
-                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                           col.names = FALSE)
-        }
-        write("}", file = out_file, append = TRUE)
-        write("", file = out_file, append = TRUE)
-    }
-    
-    write("[[Structure]]", file = out_file, append = TRUE)
-    write("StructureName = 'One Group'", file = out_file, append = TRUE)
-    write("NbGroups = 1", file = out_file, append = TRUE)
-    write("", file = out_file, append = TRUE)
-    write("Group = {",  file = out_file, append = TRUE)
-    for (i in 1:length(names(pop_list))) {
-       write(paste("\t\t", "\"", names(pop_list)[i], "\"", sep = ""),  file = out_file, append = TRUE)
-    }
-    write("}",  file = out_file, append = TRUE)
-    
-    return(invisible(NULL))
+  }
+  
+  write("[[Structure]]", file = out_file, append = TRUE)
+  write("StructureName = 'One Group'", file = out_file, append = TRUE)
+  write("NbGroups = 1", file = out_file, append = TRUE)
+  write("", file = out_file, append = TRUE)
+  write("Group = {",  file = out_file, append = TRUE)
+  for (i in 1:length(names(pop_list))) {
+    write(paste("\t\t", "\"", names(pop_list)[i], "\"", sep = ""),  file = out_file, append = TRUE)
+  }
+  write("}",  file = out_file, append = TRUE)
+  
+  return(invisible(NULL))
 }
 
 
@@ -286,82 +286,82 @@ vcf2arlequin <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = 
 
 vcf2structure <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "structure.str", method = "S") 
 {
-    method <- match.arg(method, c("S", "F"), several.ok = FALSE)
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-                   class(vcf), "instead"))
-    }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-                   class(ind_pop), "and", class(keep_pop), "instead"))
-    }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums(is.na(gt)), ]
-    }
-    vcf_list <- lapply(keep_pop, function(x) {
-        vcf[, c(TRUE, x == ind_pop)]
+  method <- match.arg(method, c("S", "F"), several.ok = FALSE)
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf_list <- lapply(keep_pop, function(x) {
+    vcf[, c(TRUE, x == ind_pop)]
+  })
+  names(vcf_list) <- keep_pop
+  pop_list <- vector(mode = "list", length = length(vcf_list))
+  names(pop_list) <- names(vcf_list)
+  
+  for (i in 1:length(vcf_list)) {
+    gt <- extract.gt(vcf_list[[i]], return.alleles = F, convertNA = T) #convertNA not working here
+    gt[is.na(gt)] <- "?/?"
+    allele1 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 1, 1)
     })
-    names(vcf_list) <- keep_pop
-    pop_list <- vector(mode = "list", length = length(vcf_list))
-    names(pop_list) <- names(vcf_list)
-    
-    for (i in 1:length(vcf_list)) {
-        gt <- extract.gt(vcf_list[[i]], return.alleles = F, convertNA = T) #convertNA not working here
-        gt[is.na(gt)] <- "?/?"
-        allele1 <- apply(gt, MARGIN = 2, function(x) {
-            substr(x, 1, 1)
-        })
-        rownames(allele1) <- NULL
-        allele1 <- t(allele1)
-        allele1[allele1 == "?"] <- "-9"
-        rownames(allele1) <- paste(rownames(allele1), "_1", 
-                                   sep = "")
-        allele2 <- apply(gt, MARGIN = 2, function(x) {
-            substr(x, 3, 3)
-        })
-        rownames(allele2) <- NULL
-        allele2 <- t(allele2)
-        allele2[allele2 == "?"] <- "-9"
-        rownames(allele2) <- paste(rownames(allele2), "_2", 
-                                   sep = "")
-        pop_list[[i]][[1]] <- allele1
-        pop_list[[i]][[2]] <- allele2
+    rownames(allele1) <- NULL
+    allele1 <- t(allele1)
+    allele1[allele1 == "?"] <- "-9"
+    rownames(allele1) <- paste(rownames(allele1), "_1", 
+                               sep = "")
+    allele2 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 3, 3)
+    })
+    rownames(allele2) <- NULL
+    allele2 <- t(allele2)
+    allele2[allele2 == "?"] <- "-9"
+    rownames(allele2) <- paste(rownames(allele2), "_2", 
+                               sep = "")
+    pop_list[[i]][[1]] <- allele1
+    pop_list[[i]][[2]] <- allele2
+  }
+  
+  if (file.exists(out_file)) {
+    file.remove(out_file)
+  }
+  
+  # default output Structure, alternate output FastStructure
+  if (method == "S") {
+    for (i in 1:length(pop_list)) {
+      for (j in 1:nrow(pop_list[[i]][[1]])) {
+        utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), i, pop_list[[i]][[1]][j, ])), file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                           col.names = FALSE)
+        utils::write.table(t(c(names(pop_list[[i]][[2]][j, 1]), i, pop_list[[i]][[2]][j, ])), file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                           col.names = FALSE)
+      }
     }
-    
-    if (file.exists(out_file)) {
-        file.remove(out_file)
+  } else if (method == "F") {
+    fill <- rep(c(0), 4)
+    for (i in 1:length(pop_list)) {
+      for (j in 1:nrow(pop_list[[i]][[1]])) {
+        utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), i, fill, pop_list[[i]][[1]][j, ])), file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                           col.names = FALSE)
+        utils::write.table(t(c(names(pop_list[[i]][[2]][j, 1]), i, fill, pop_list[[i]][[2]][j, ])), file = out_file, 
+                           append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
+                           col.names = FALSE)
+      }
     }
-    
-    # default output Structure, alternate output FastStructure
-    if (method == "S") {
-        for (i in 1:length(pop_list)) {
-            for (j in 1:nrow(pop_list[[i]][[1]])) {
-                utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), i, pop_list[[i]][[1]][j, ])), file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                                   col.names = FALSE)
-                utils::write.table(t(c(names(pop_list[[i]][[2]][j, 1]), i, pop_list[[i]][[2]][j, ])), file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                                   col.names = FALSE)
-                }
-            }
-    } else if (method == "F") {
-        fill <- rep(c(0), 4)
-        for (i in 1:length(pop_list)) {
-            for (j in 1:nrow(pop_list[[i]][[1]])) {
-                utils::write.table(t(c(names(pop_list[[i]][[1]][j, 1]), i, fill, pop_list[[i]][[1]][j, ])), file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                                   col.names = FALSE)
-                utils::write.table(t(c(names(pop_list[[i]][[2]][j, 1]), i, fill, pop_list[[i]][[2]][j, ])), file = out_file, 
-                                   append = TRUE, quote = FALSE, sep = "\t", row.names = FALSE, 
-                                   col.names = FALSE)
-                }
-            }
-    }
-    
-    return(invisible(NULL))
+  }
+  
+  return(invisible(NULL))
 }
 
 
@@ -394,54 +394,54 @@ vcf2structure <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file =
 vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
                          out_file = "genepop_infile.txt")
 {
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-                   class(vcf), "instead"))
-    }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-                   class(ind_pop), "and", class(keep_pop), "instead"))
-    }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums((is.na(gt))), ]
-    }
-    vcf_list <- lapply(keep_pop, function(x) {
-        vcf[, c(TRUE, x == ind_pop)]
-    })
-    names(vcf_list) <- keep_pop
-    pop_list <- vector(mode = "list", length = length(vcf_list))
-    names(pop_list) <- names(vcf_list)
-    
-    gt <- extract.gt(vcf, return.alleles = F, convertNA = T)
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums((is.na(gt))), ]
+  }
+  vcf_list <- lapply(keep_pop, function(x) {
+    vcf[, c(TRUE, x == ind_pop)]
+  })
+  names(vcf_list) <- keep_pop
+  pop_list <- vector(mode = "list", length = length(vcf_list))
+  names(pop_list) <- names(vcf_list)
+  
+  gt <- extract.gt(vcf, return.alleles = F, convertNA = T)
+  gt <- t(gt)
+  
+  write("Title = 'Generated by vcf2genpop.R'", file = out_file)
+  suppressWarnings(write.table(gt[0,], file = out_file, quote = FALSE, sep = ", ", col.names = TRUE, append = TRUE))
+  
+  for (i in 1:length(vcf_list)) {
+    gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
+    gt[gt == "."] <- "0000"
+    gt[gt == "A/A"] <- "0101"
+    gt[gt == "A/C" | gt == "C/A"] <- "0102"
+    gt[gt == "A/G" | gt == "G/A"] <- "0103"
+    gt[gt == "A/T" | gt == "T/A"] <- "0104"
+    gt[gt == "C/C"] <- "0202"
+    gt[gt == "C/G" | gt == "G/C"] <- "0203"
+    gt[gt == "C/T" | gt == "T/C"] <- "0204"
+    gt[gt == "G/G"] <- "0303"
+    gt[gt == "G/T" | gt == "T/G"] <- "0304"
+    gt[gt == "T/T"] <- "0404"
     gt <- t(gt)
-    
-    write("Title = 'Generated by vcf2genpop.R'", file = out_file)
-    suppressWarnings(write.table(gt[0,], file = out_file, quote = FALSE, sep = ", ", col.names = TRUE, append = TRUE))
-    
-    for (i in 1:length(vcf_list)) {
-        gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
-        gt[gt == "."] <- "0000"
-        gt[gt == "A/A"] <- "0101"
-        gt[gt == "A/C" | gt == "C/A"] <- "0102"
-        gt[gt == "A/G" | gt == "G/A"] <- "0103"
-        gt[gt == "A/T" | gt == "T/A"] <- "0104"
-        gt[gt == "C/C"] <- "0202"
-        gt[gt == "C/G" | gt == "G/C"] <- "0203"
-        gt[gt == "C/T" | gt == "T/C"] <- "0204"
-        gt[gt == "G/G"] <- "0303"
-        gt[gt == "G/T" | gt == "T/G"] <- "0304"
-        gt[gt == "T/T"] <- "0404"
-        gt <- t(gt)
-        write(paste("pop ", names(pop_list)[i], sep = ""), file = out_file, append = TRUE)
-        write.table(cbind(sep = ',', gt), file = out_file, quote = FALSE, sep = " ", col.names = FALSE, append = TRUE)
-    }
-    
-    return(invisible(NULL))
+    write(paste("pop ", names(pop_list)[i], sep = ""), file = out_file, append = TRUE)
+    write.table(cbind(sep = ',', gt), file = out_file, quote = FALSE, sep = " ", col.names = FALSE, append = TRUE)
+  }
+  
+  return(invisible(NULL))
 }
-    
+
 
 ################################
 #' @title vcf2fineRadStructure
@@ -468,7 +468,7 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 #'
 
 vcf2fineRadStructure <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
-                         out_file = "fineRadStructure_infile.txt")
+                                  out_file = "fineRadStructure_infile.txt")
 {
   if (class(vcf) != "vcfR") {
     stop(paste("Expecting an object of class vcfR, received a", 
@@ -555,38 +555,38 @@ vcf2fineRadStructure <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 
 vcf2snapp <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "snapp.nex") 
 {
-#    if (!require(ape)) {
-#        install.packages("ape")
-#    }
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-                   class(vcf), "instead"))
-    }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-                   class(ind_pop), "and", class(keep_pop), "instead"))
-    }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums(is.na(gt)), ]
-    }
-    vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
-    gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
-    gt[is.na(gt)] <- "?"
-    gt[gt == "0/0"] <- "0"
-    gt[gt == "1/1"] <- "1"
-    gt[gt == "0/1"] <- "2"
-    gt <- t(gt)
-
-    ape::write.nexus.data(gt, out_file, format = "standard", interleaved = FALSE)
-    
-    # fix symbols in nexus so that snapp.xml file is correctly formated
-    fix_symbols <- paste(c("sed -i 's/symbols=\"0123456789\"/symbols=\"012\"/'", out_file), collapse = " ")
-    system(fix_symbols)
-    
-    return(invisible(NULL))
+  #    if (!require(ape)) {
+  #        install.packages("ape")
+  #    }
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
+  gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
+  gt[is.na(gt)] <- "?"
+  gt[gt == "0/0"] <- "0"
+  gt[gt == "1/1"] <- "1"
+  gt[gt == "0/1"] <- "2"
+  gt <- t(gt)
+  
+  ape::write.nexus.data(gt, out_file, format = "standard", interleaved = FALSE)
+  
+  # fix symbols in nexus so that snapp.xml file is correctly formated
+  fix_symbols <- paste(c("sed -i 's/symbols=\"0123456789\"/symbols=\"012\"/'", out_file), collapse = " ")
+  system(fix_symbols)
+  
+  return(invisible(NULL))
 }
 
 
@@ -615,41 +615,41 @@ vcf2snapp <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "sn
 
 vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "nexus.nex") 
 {
-#    if (!require(ape)) {
-#        install.packages("ape")
-#    }
-    if (class(vcf) != "vcfR") {
-        stop(paste("Expecting an object of class vcfR, received a", 
-                   class(vcf), "instead"))
-    }
-    if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
-        stop(paste("Expecting population vector, received a", 
-                   class(ind_pop), "and", class(keep_pop), "instead"))
-    }
-    vcf <- extract.indels(vcf, return.indels = F)
-    vcf <- vcf[is.biallelic(vcf), ]
-    if (inc_missing == FALSE) {
-        gt <- extract.gt(vcf, convertNA = T)
-        vcf <- vcf[!rowSums(is.na(gt)), ]
-    }
-    vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
-    gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
-    gt[gt == "."] <- "?"
-    gt[gt == "A/A"] <- "A"
-    gt[gt == "A/C" | gt == "C/A"] <- "M"
-    gt[gt == "A/G" | gt == "G/A"] <- "R"
-    gt[gt == "A/T" | gt == "T/A"] <- "W"
-    gt[gt == "C/C"] <- "C"
-    gt[gt == "C/G" | gt == "G/C"] <- "S"
-    gt[gt == "C/T" | gt == "T/C"] <- "Y"
-    gt[gt == "G/G"] <- "G"
-    gt[gt == "G/T" | gt == "T/G"] <- "K"
-    gt[gt == "T/T"] <- "T"
-    gt <- t(gt)
-    
-    ape::write.nexus.data(gt, out_file, format = "DNA", interleaved = FALSE)
-    
-    return(invisible(NULL))
+  #    if (!require(ape)) {
+  #        install.packages("ape")
+  #    }
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
+  gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
+  gt[gt == "."] <- "?"
+  gt[gt == "A/A"] <- "A"
+  gt[gt == "A/C" | gt == "C/A"] <- "M"
+  gt[gt == "A/G" | gt == "G/A"] <- "R"
+  gt[gt == "A/T" | gt == "T/A"] <- "W"
+  gt[gt == "C/C"] <- "C"
+  gt[gt == "C/G" | gt == "G/C"] <- "S"
+  gt[gt == "C/T" | gt == "T/C"] <- "Y"
+  gt[gt == "G/G"] <- "G"
+  gt[gt == "G/T" | gt == "T/G"] <- "K"
+  gt[gt == "T/T"] <- "T"
+  gt <- t(gt)
+  
+  ape::write.nexus.data(gt, out_file, format = "DNA", interleaved = FALSE)
+  
+  return(invisible(NULL))
 }
 
 
@@ -740,18 +740,18 @@ vcf2fasta <-function (vcf, ind_pop, keep_pop, interleaved = FALSE, inc_missing =
 #'
 
 vcf_sub_pops <- function(vcf, ind_pop, keep_pop, whitelist = TRUE) {
-    ids <- which(ind_pop %in% keep_pop)
-    ids <- ids+1
-    if (whitelist == TRUE){
-        vcf <- vcf[, c(1,ids)] %>%
-            vcf_filter_invariant()
-    }
-    else {
-        vcf <- vcf[, -c(ids)] %>%
-            vcf_filter_invariant()
-    }
-    
-    return(vcf)
+  ids <- which(ind_pop %in% keep_pop)
+  ids <- ids+1
+  if (whitelist == TRUE){
+    vcf <- vcf[, c(1,ids)] %>%
+      vcf_filter_invariant()
+  }
+  else {
+    vcf <- vcf[, -c(ids)] %>%
+      vcf_filter_invariant()
+  }
+  
+  return(vcf)
 }
 
 
@@ -775,21 +775,21 @@ vcf_sub_pops <- function(vcf, ind_pop, keep_pop, whitelist = TRUE) {
 #'
 
 vcf_sub_indivs <- function(vcf, indiv, whitelist = TRUE) {
-    # read all sample names in vcf
-    vcf_names <- colnames(vcf@gt)[-1]
-    
-    ids <- which(vcf_names %in% indiv)
-    ids <- ids+1
-    if (whitelist == TRUE){
-        vcf <- vcf[, c(1,ids)] %>%
-            vcf_filter_invariant()
-    }
-    else {
-        vcf <- vcf[, -c(ids)] %>%
-            vcf_filter_invariant()
-    }
-    
-    return(vcf)
+  # read all sample names in vcf
+  vcf_names <- colnames(vcf@gt)[-1]
+  
+  ids <- which(vcf_names %in% indiv)
+  ids <- ids+1
+  if (whitelist == TRUE){
+    vcf <- vcf[, c(1,ids)] %>%
+      vcf_filter_invariant()
+  }
+  else {
+    vcf <- vcf[, -c(ids)] %>%
+      vcf_filter_invariant()
+  }
+  
+  return(vcf)
 }
 
 
@@ -812,20 +812,20 @@ vcf_sub_indivs <- function(vcf, indiv, whitelist = TRUE) {
 #'
 
 vcf_filter_missingness <- function(vcf, miss_p) {
-    gt <- extract.gt(vcf, convertNA = T)
-    # get number of samples in vcf
-    n_samples <- ncol(vcf@gt) - 1
-    
-    # keep only those loci with < % missing data
-    vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
-    
-    # print VCF matrix completeness
-    vcf1 <- vcf_filter_oneSNP(vcf)
-    gt <- extract.gt(vcf1, convertNA = T)
-    missing_p <- sum(is.na(gt)) / length(gt)
-    print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
-    
-    return(vcf)
+  gt <- extract.gt(vcf, convertNA = T)
+  # get number of samples in vcf
+  n_samples <- ncol(vcf@gt) - 1
+  
+  # keep only those loci with < % missing data
+  vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
+  
+  # print VCF matrix completeness
+  vcf1 <- vcf_filter_oneSNP(vcf)
+  gt <- extract.gt(vcf1, convertNA = T)
+  missing_p <- sum(is.na(gt)) / length(gt)
+  print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
+  
+  return(vcf)
 }
 
 
@@ -851,26 +851,26 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 #'
 
 vcf_filter_multiSNP <- function(vcf, minS = 2, maxS = 5) {
-    # read all loci names in vcf
-    chrom <- getCHROM(vcf)
-    id <-  getID(vcf)
-    chrom_id <- cbind(chrom, id) %>%
-      as_tibble()
-    
-    keeper <- chrom_id %>%
-      count(chrom) %>%
-      filter(n >= minS & n <= maxS) %>%
-      select(-n) %>%
-      as.matrix() %>%
-      as.character()
-    
-    # keep only those loci with between minS and maxS SNPs
-    vcf <- vcf[chrom %in% keeper, ]
-    
-    # keep only those loci with 2+ SNPs
-    # vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]),]
-    
-    return(vcf)
+  # read all loci names in vcf
+  chrom <- getCHROM(vcf)
+  id <-  getID(vcf)
+  chrom_id <- cbind(chrom, id) %>%
+    as_tibble()
+  
+  keeper <- chrom_id %>%
+    count(chrom) %>%
+    filter(n >= minS & n <= maxS) %>%
+    select(-n) %>%
+    as.matrix() %>%
+    as.character()
+  
+  # keep only those loci with between minS and maxS SNPs
+  vcf <- vcf[chrom %in% keeper, ]
+  
+  # keep only those loci with 2+ SNPs
+  # vcf <- vcf[chrom %in% unique(chrom[duplicated(chrom)]),]
+  
+  return(vcf)
 }
 
 
@@ -893,13 +893,13 @@ vcf_filter_multiSNP <- function(vcf, minS = 2, maxS = 5) {
 #'
 
 vcf_filter_oneSNP <- function(vcf) {
-    # read all loci names in vcf
-    chrom <- getCHROM(vcf)
-    
-    # keep only those loci with 1 SNP
-    vcf <- vcf[!duplicated(chrom),]
-    
-    return(vcf)
+  # read all loci names in vcf
+  chrom <- getCHROM(vcf)
+  
+  # keep only those loci with 1 SNP
+  vcf <- vcf[!duplicated(chrom),]
+  
+  return(vcf)
 }
 
 
@@ -922,16 +922,16 @@ vcf_filter_oneSNP <- function(vcf) {
 #'
 
 vcf_filter_invariant <- function(vcf) {
-    gt <- extract.gt(vcf, convertNA = T)
-    # remove invariant loci
-    y <- vector(length = nrow(gt))
-    for(i in 1:length(y)) {
-        # keep if num unique loci > 1
-        y[i] <- length(unique(na.omit(gt[i,]))) > 1
-    }
-    vcf <- vcf[y,]
-    
-    return(vcf)
+  gt <- extract.gt(vcf, convertNA = T)
+  # remove invariant loci
+  y <- vector(length = nrow(gt))
+  for(i in 1:length(y)) {
+    # keep if num unique loci > 1
+    y[i] <- length(unique(na.omit(gt[i,]))) > 1
+  }
+  vcf <- vcf[y,]
+  
+  return(vcf)
 }
 
 
@@ -954,12 +954,12 @@ vcf_filter_invariant <- function(vcf) {
 #'
 
 vcf_filter_quality <- function(vcf, qual) {
-    if(any(is.na(getQUAL(vcf)))){
-        vcf@fix[,6] <- stringr::str_extract(vcf@fix[,8], "Rk=[0-9|.]*") %>%
-            stringr::str_extract("[^Rk=]+")
-    }
-    # keep only those loci with minimum quality
-    vcf <- vcf[getQUAL(vcf) >= qual,]
-    
-    return(vcf)
+  if(any(is.na(getQUAL(vcf)))){
+    vcf@fix[,6] <- stringr::str_extract(vcf@fix[,8], "Rk=[0-9|.]*") %>%
+      stringr::str_extract("[^Rk=]+")
+  }
+  # keep only those loci with minimum quality
+  vcf <- vcf[getQUAL(vcf) >= qual,]
+  
+  return(vcf)
 }
