@@ -778,6 +778,11 @@ vcf_sub_indivs <- function(vcf, indiv, whitelist = TRUE) {
   # read all sample names in vcf
   vcf_names <- colnames(vcf@gt)[-1]
   
+  if (length(indiv) == 0){
+    indiv <- vcf_names
+    whitelist <- TRUE
+  }
+  
   ids <- which(vcf_names %in% indiv)
   ids <- ids+1
   if (whitelist == TRUE){
