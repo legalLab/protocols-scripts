@@ -424,16 +424,16 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
   for (i in 1:length(vcf_list)) {
     gt <- extract.gt(vcf_list[[i]], return.alleles = T, convertNA = T) #convertNA not working here
     gt[gt == "."] <- "0000"
-    gt[gt == "A/A"] <- "0101"
-    gt[gt == "A/C" | gt == "C/A"] <- "0102"
-    gt[gt == "A/G" | gt == "G/A"] <- "0103"
-    gt[gt == "A/T" | gt == "T/A"] <- "0104"
-    gt[gt == "C/C"] <- "0202"
-    gt[gt == "C/G" | gt == "G/C"] <- "0203"
-    gt[gt == "C/T" | gt == "T/C"] <- "0204"
-    gt[gt == "G/G"] <- "0303"
-    gt[gt == "G/T" | gt == "T/G"] <- "0304"
-    gt[gt == "T/T"] <- "0404"
+    gt[gt == "A/A" | gt == "A|A"] <- "0101"
+    gt[gt == "A/C" | gt == "C/A" | gt == "A|C" | gt == "C|A"] <- "0102"
+    gt[gt == "A/G" | gt == "G/A" | gt == "A|G" | gt == "G|A"] <- "0103"
+    gt[gt == "A/T" | gt == "T/A" | gt == "A|T" | gt == "T|A"] <- "0104"
+    gt[gt == "C/C" | gt == "C|C"] <- "0202"
+    gt[gt == "C/G" | gt == "G/C" | gt == "C|G" | gt == "G|C"] <- "0203"
+    gt[gt == "C/T" | gt == "T/C" | gt == "C|T" | gt == "T|C"] <- "0204"
+    gt[gt == "G/G" | gt == "G|G"] <- "0303"
+    gt[gt == "G/T" | gt == "T/G" | gt == "G|T" | gt == "T|G"] <- "0304"
+    gt[gt == "T/T" | gt == "T|T"] <- "0404"
     gt <- t(gt)
     write(paste("pop ", names(pop_list)[i], sep = ""), file = out_file, append = TRUE)
     write.table(cbind(sep = ',', gt), file = out_file, quote = FALSE, sep = " ", col.names = FALSE, append = TRUE)
@@ -575,9 +575,9 @@ vcf2snapp <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "sn
   vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
   gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
   gt[is.na(gt)] <- "?"
-  gt[gt == "0/0"] <- "0"
-  gt[gt == "1/1"] <- "1"
-  gt[gt == "0/1"] <- "2"
+  gt[gt == "0/0" | gt == "0|0"] <- "0"
+  gt[gt == "1/1" | gt == "1|1"] <- "1"
+  gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "2"
   gt <- t(gt)
   
   ape::write.nexus.data(gt, out_file, format = "standard", interleaved = FALSE)
@@ -635,16 +635,16 @@ vcf2nexus <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = "ne
   vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
   gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
   gt[gt == "."] <- "?"
-  gt[gt == "A/A"] <- "A"
-  gt[gt == "A/C" | gt == "C/A"] <- "M"
-  gt[gt == "A/G" | gt == "G/A"] <- "R"
-  gt[gt == "A/T" | gt == "T/A"] <- "W"
-  gt[gt == "C/C"] <- "C"
-  gt[gt == "C/G" | gt == "G/C"] <- "S"
-  gt[gt == "C/T" | gt == "T/C"] <- "Y"
-  gt[gt == "G/G"] <- "G"
-  gt[gt == "G/T" | gt == "T/G"] <- "K"
-  gt[gt == "T/T"] <- "T"
+  gt[gt == "A/A" | gt == "A|A"] <- "A"
+  gt[gt == "A/C" | gt == "C/A" | gt == "A|C" | gt == "C|A"] <- "M"
+  gt[gt == "A/G" | gt == "G/A" | gt == "A|G" | gt == "G|A"] <- "R"
+  gt[gt == "A/T" | gt == "T/A" | gt == "A|T" | gt == "T|A"] <- "W"
+  gt[gt == "C/C" | gt == "C|C"] <- "C"
+  gt[gt == "C/G" | gt == "G/C" | gt == "C|G" | gt == "G|C"] <- "S"
+  gt[gt == "C/T" | gt == "T/C" | gt == "C|T" | gt == "T|C"] <- "Y"
+  gt[gt == "G/G" | gt == "G|G"] <- "G"
+  gt[gt == "G/T" | gt == "T/G" | gt == "G|T" | gt == "T|G"] <- "K"
+  gt[gt == "T/T" | gt == "T|T"] <- "T"
   gt <- t(gt)
   
   ape::write.nexus.data(gt, out_file, format = "DNA", interleaved = FALSE)
@@ -698,16 +698,16 @@ vcf2fasta <-function (vcf, ind_pop, keep_pop, interleaved = FALSE, inc_missing =
   vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
   gt <- extract.gt(vcf2, return.alleles = T, convertNA = T)
   gt[gt == "."] <- "?"
-  gt[gt == "A/A"] <- "A"
-  gt[gt == "A/C" | gt == "C/A"] <- "M"
-  gt[gt == "A/G" | gt == "G/A"] <- "R"
-  gt[gt == "A/T" | gt == "T/A"] <- "W"
-  gt[gt == "C/C"] <- "C"
-  gt[gt == "C/G" | gt == "G/C"] <- "S"
-  gt[gt == "C/T" | gt == "T/C"] <- "Y"
-  gt[gt == "G/G"] <- "G"
-  gt[gt == "G/T" | gt == "T/G"] <- "K"
-  gt[gt == "T/T"] <- "T"
+  gt[gt == "A/A" | gt == "A|A"] <- "A"
+  gt[gt == "A/C" | gt == "C/A" | gt == "A|C" | gt == "C|A"] <- "M"
+  gt[gt == "A/G" | gt == "G/A" | gt == "A|G" | gt == "G|A"] <- "R"
+  gt[gt == "A/T" | gt == "T/A" | gt == "A|T" | gt == "T|A"] <- "W"
+  gt[gt == "C/C" | gt == "C|C"] <- "C"
+  gt[gt == "C/G" | gt == "G/C" | gt == "C|G" | gt == "G|C"] <- "S"
+  gt[gt == "C/T" | gt == "T/C" | gt == "C|T" | gt == "T|C"] <- "Y"
+  gt[gt == "G/G" | gt == "G|G"] <- "G"
+  gt[gt == "G/T" | gt == "T/G" | gt == "G|T" | gt == "T|G"] <- "K"
+  gt[gt == "T/T" | gt == "T|T"] <- "T"
   gt <- t(gt)
   
   ifelse(interleaved == FALSE, nbcol <- -1, nbcol <- 6)
