@@ -1000,7 +1000,7 @@ vcf_filter_invariant <- function(vcf) {
 #' vcf_filter_quality(my_vcf)
 #'
 
-vcf_filter_quality <- function(vcf, qual) {
+vcf_filter_quality <- function(vcf, qual = 20) {
   if(any(is.na(getQUAL(vcf)))){
     print("No quality information in VCF; keeping VCF as is")
   } else {
