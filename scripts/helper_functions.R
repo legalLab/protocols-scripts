@@ -43,6 +43,20 @@ rm_na <- function(x) {
   return(y)
 }
 
+# function from https://github.com/tidyverse/tidyr/issues/279
+explode <- function(df, w, .id = NULL) {
+  w <- pull(mutate(df, `_weight` = !!enquo(w)))
+  if (!is.numeric(w)) {
+    stop("`w` must evalute to a numeric vector", call. = FALSE)
+  }
+  df <- df[rep(seq_len(nrow(df)), w), , drop = FALSE]
+  if (!is.null(.id)) {
+    df[[.id]] <- sequence(w)
+  }
+  
+  return(df)
+}
+
 # generate table of samples and barcode sequences from table of samples and barcode names
 recode_by_lookup <- function (df, lookup, ngs = "illumina") {
   if(!is.data.frame(lookup) && !is.matrix(lookup)) {
@@ -60,7 +74,10 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina") {
   if(!is.data.frame(df)) {
     stop("The dataframe must be a tibble or data.frame")
   }
-  if(ncol(df) != 3 && ngs == "illumina") {
+  if(ncol(df) != 3 && ngs == "azenta") {
+    stop("The Illumina dataframe must have three colums; q5 q7 id")
+  }
+  else if (ncol(df) != 3 && ngs == "illumina") {
     stop("The Illumina dataframe must have three colums; q5 q7 id")
   }
   else if (ncol(df) != 2 && ngs == "ion") {
@@ -75,7 +92,7 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina") {
   # remove missing samples
   df <- df[!is.na(df$id), ]
   
-  if(ngs == "illumina") {
+  if(ngs == "azenta") {
     # lookup q5
     df$Q5n <- df$Q5
     df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
@@ -86,7 +103,17 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina") {
     col_order <- c("id", "Q7n", "Q7", "Q5n", "Q5")
     df <- df[, col_order]
   }
+  else if(ngs == "illumina") {
+    # lookup q5
+    df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
+    # lookup q7
+    df$Q7 <- lookup[match(df$Q7, lookup[, 1]), 2]
+    # reorder columns
+    col_order <- c("id", "Q7", "Q5")
+    df <- df[, col_order]
+  }
   else if(ngs == "ion") {
+    # lookup ham
     df$bc <- lookup[match(df$bc, lookup[, 1]), 2]
     # reorder columns
     col_order <- c("id", "bc")
