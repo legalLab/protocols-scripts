@@ -225,7 +225,7 @@ vcf2arlequin <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file = 
   write("[Data]", file = out_file, append = TRUE)
   write("[[Samples]]", file = out_file, append = TRUE)
   write("", file = out_file, append = TRUE)
-  write(paste("#There are ", ncol(pop_list[[i]][[1]]), " SNPs", sep = ""), file = out_file, append = TRUE)
+  write(paste("#There are ", nrow(vcf), " SNPs", sep = ""), file = out_file, append = TRUE)
   write("", file = out_file, append = TRUE)
   
   for (i in 1:length(pop_list)) {
@@ -373,9 +373,9 @@ vcf2structure <-function (vcf, ind_pop, keep_pop, inc_missing = TRUE, out_file =
 #'
 #' @param vcf -> vcfR object
 #' @param ind_pop -> population assignment of individuals in vcf (factor)
-#' @param keep_pop -> population(s) of interest to include in Structure infile (factor)
+#' @param keep_pop -> population(s) of interest to include in Genepop infile (factor)
 #' @param inc_missing -> include missing data (logical)
-#' @param out_file -> name of file to output (Structure infile)
+#' @param out_file -> name of file to output (Genepop infile)
 #' @export Genepop infile of SNPs
 #' @return nothing
 #'
@@ -444,6 +444,87 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 
 
 ################################
+#' @title vcf2bayescan
+#' @description converts vcfR format data to Bayescan infile
+#' @description in part based on vcfR2migrate function (vcfR package)
+#' @author Tomas Hrbek November 2022
+#'
+#' @param vcf -> vcfR object
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Bayescan infile (factor)
+#' @param inc_missing -> include missing data (logical)
+#' @param out_file -> name of file to output (Bayescan infile)
+#' @export Bayescan infile of SNPs
+#' @return nothing
+#'
+#' @details
+#' This function converts the vcfR object to a Bayescan formatted input file
+#' The function will remove indels, and multiallelic loci, and optionally loci with missing data
+#'
+#' @example
+#' vcf2bayescan(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, inc_missing = TRUE, out_file = "Bayescan_infile.txt")
+#' vcf2bayescan(my_vcf, ind_pop, keepers, out_file = "Bayescan_infile.txt")
+#' vcf2bayescan(my_vcf, ind_pop, keepers)
+#'
+
+vcf2bayescan <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE, 
+                         out_file = "bayescan_infile.txt")
+{
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums((is.na(gt))), ]
+  }
+  vcf_list <- lapply(keep_pop, function(x) {
+    vcf[, c(TRUE, x == ind_pop)]
+  })
+  names(vcf_list) <- keep_pop
+  pop_list <- vector(mode = "list", length = length(vcf_list))
+  names(pop_list) <- names(vcf_list)
+  
+  for (i in 1:length(vcf_list)) {
+    gt <- extract.gt(vcf_list[[i]], return.alleles = F, convertNA = T) #convertNA not working here
+    allele1 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 1, 1)
+    })
+    rownames(allele1) <- c(1:nrow(allele1))
+    allele2 <- apply(gt, MARGIN = 2, function(x) {
+      substr(x, 3, 3)
+    })
+    rownames(allele2) <- c(1:nrow(allele1))
+    pop_list[[i]][[1]] <- allele1
+    pop_list[[i]][[2]] <- allele2
+  }
+  
+  write(paste("[loci]=", nrow(vcf), sep = ""), file = out_file)
+  write("", file = out_file, append = TRUE)
+  write(paste("[populations]=", length(vcf_list), sep = ""), file = out_file, append = TRUE)
+  
+  for (i in 1:length(pop_list)) {
+    write("", file = out_file, append = TRUE)
+    write(paste("[pop]=", i, sep = ""), file = out_file, append = TRUE)
+    
+    for (j in 1:nrow(pop_list[[i]][[1]])) {
+      REF <- sum(pop_list[[i]][[1]][j, ] == 0, na.rm = TRUE) + sum(pop_list[[i]][[2]][j, ] == 0, na.rm = TRUE)
+      ALT <- sum(pop_list[[i]][[1]][j, ] == 1, na.rm = TRUE) + sum(pop_list[[i]][[2]][j, ] == 1, na.rm = TRUE)
+      write(paste(j, "\t", REF + ALT, "\t2\t", REF, " ", ALT, sep = ""), file = out_file, append = TRUE)
+    }
+  }
+  
+  return(invisible(NULL))
+}
+
+
+################################
 #' @title vcf2fineRadStructure
 #' @description converts vcfR format data to fineRadStructure infile
 #' @description in part based on vcfR2genepop function
@@ -451,9 +532,9 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 #'
 #' @param vcf -> vcfR object
 #' @param ind_pop -> population assignment of individuals in vcf (factor)
-#' @param keep_pop -> population(s) of interest to include in Structure infile (factor)
+#' @param keep_pop -> population(s) of interest to include in fineRadStructure infile (factor)
 #' @param inc_missing -> include missing data (logical)
-#' @param out_file -> name of file to output (Structure infile)
+#' @param out_file -> name of file to output (fineRadStructure infile)
 #' @export fineRadStructure infile of alleles
 #' @return nothing
 #'
