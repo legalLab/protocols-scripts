@@ -502,23 +502,21 @@ vcf2bayescan <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
       substr(x, 3, 3)
     })
     rownames(allele2) <- c(1:nrow(allele1))
-    pop_list[[i]][[1]] <- allele1
-    pop_list[[i]][[2]] <- allele2
+    
+    pop_list[[i]][[3]] <- apply(cbind(allele1, allele2), 1, function(x){sum(x == 0, na.rm = TRUE)})
+    pop_list[[i]][[4]] <- apply(cbind(allele1, allele2), 1, function(x){sum(x == 1, na.rm = TRUE)})
+    pop_list[[i]][[1]] <- pop_list[[i]][[3]] + pop_list[[i]][[4]]
+    pop_list[[i]][[2]] <- rep(2, length(pop_list[[i]][[1]]))
   }
   
   write(paste("[loci]=", nrow(vcf), sep = ""), file = out_file)
   write("", file = out_file, append = TRUE)
-  write(paste("[populations]=", length(vcf_list), sep = ""), file = out_file, append = TRUE)
+  write(paste("[populations]=", length(pop_list), sep = ""), file = out_file, append = TRUE)
   
   for (i in 1:length(pop_list)) {
     write("", file = out_file, append = TRUE)
     write(paste("[pop]=", i, sep = ""), file = out_file, append = TRUE)
-    
-    for (j in 1:nrow(pop_list[[i]][[1]])) {
-      REF <- sum(pop_list[[i]][[1]][j, ] == 0, na.rm = TRUE) + sum(pop_list[[i]][[2]][j, ] == 0, na.rm = TRUE)
-      ALT <- sum(pop_list[[i]][[1]][j, ] == 1, na.rm = TRUE) + sum(pop_list[[i]][[2]][j, ] == 1, na.rm = TRUE)
-      write(paste(j, "\t", REF + ALT, "\t2\t", REF, " ", ALT, sep = ""), file = out_file, append = TRUE)
-    }
+    utils::write.table(pop_list[[i]], file = out_file, quote = FALSE, sep = "\t", col.names = FALSE, row.names = TRUE, append = TRUE)
   }
   
   return(invisible(NULL))
@@ -576,11 +574,9 @@ vcf2treemix <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
     allele1 <- apply(gt, MARGIN = 2, function(x) {
       substr(x, 1, 1)
     })
-    rownames(allele1) <- c(1:nrow(allele1))
     allele2 <- apply(gt, MARGIN = 2, function(x) {
       substr(x, 3, 3)
     })
-    rownames(allele2) <- c(1:nrow(allele1))
     
     REF <- apply(cbind(allele1, allele2), 1, function(x){sum(x == 0, na.rm = TRUE)})
     ALT <- apply(cbind(allele1, allele2), 1, function(x){sum(x == 1, na.rm = TRUE)})
