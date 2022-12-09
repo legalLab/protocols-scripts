@@ -1137,6 +1137,31 @@ vcf_filter_invariant <- function(vcf) {
 
 
 ################################
+#' @title vcf_filter_coverage
+#' @description remove genotypes below coverage threshold from vcfR format data
+#' @author Tomas Hrbek November 2022
+#'
+#' @param vcf -> vcfR object
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function removes genotypes below coverage threshold from the vcfR object
+#'
+#' @example
+#' vcf_filter_coverage(vcf = my_vcf, cover = 10)
+#' vcf_filter_coverage(my_vcf)
+#'
+
+vcf_filter_coverage <- function(vcf, cover = 10) {
+  dp <- extract.gt(vcf, element = "DP", as.numeric = TRUE)
+  vcf@gt[,-1][dp < cover] <- "./.:0:.,.,.:0,0:0,0"
+  
+  return(vcf)
+}
+
+
+################################
 #' @title vcf_filter_quality
 #' @description remove loci below quality threshold from vcfR format data
 #' @author Tomas Hrbek February 2022
