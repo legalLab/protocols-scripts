@@ -455,7 +455,7 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 #' @param ind_pop -> population assignment of individuals in vcf (factor)
 #' @param keep_pop -> population(s) of interest to include in Genlight infile (factor)
 #' @param inc_missing -> include missing data (logical)
-#' @export nothing
+#' @export Genlight object
 #' @return Genlight object
 #'
 #' @details
@@ -464,11 +464,12 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 #' The function will remove indels, and multiallelic loci, and optionally loci with missing data
 #'
 #' @example
-#' vcf2genlight(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, ploidy = 2, inc_missing = TRUE)
+#' vcf2genlight(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, ploidy = 2, inc_missing = TRUE, out_file = "Genlight_infile.txt")
+#' vcf2genlight(my_vcf, ind_pop, keepers, out_file = "Genlight_infile.txt")
 #' vcf2genlight(my_vcf, ind_pop, keepers)
-#'
 
-vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE)
+vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE, 
+                          out_file = "genlight_infile.R")
 {
   if (class(vcf) != "vcfR") {
     stop(paste("Expecting an object of class vcfR, received a", 
@@ -495,12 +496,14 @@ vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE
   gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
   
   # create genelight object
-  x <- new("genlight", t(gt))
+  suppressWarnings(x <- new("genlight", t(gt)))
   
   adegenet::chromosome(x) <- getCHROM(vcf2)
   adegenet::position(x) <- getPOS(vcf2)
   adegenet::pop(x) <- ind_pop[ind_pop %in% keep_pop]
   adegenet::ploidy(x) <- ploidy
+  
+  save(x, file = out_file)
   
   return(x)
 }
