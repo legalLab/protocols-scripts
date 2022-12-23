@@ -5,6 +5,7 @@
 # depends on dplyr (many functions)
 # depends on ape (vcf2nexus, vcf2snapp)
 # depends on glue (vcf2fineRadStructure, vcf2treemix)
+# depends on adegenet (vcf2genlight)
 
 
 ################################
@@ -445,6 +446,67 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 
 
 ################################
+#' @title vcf2genlight
+#' @description converts vcfR format data to Genlight infile
+#' @description in part based on vcfR2genlight function (vcfR package)
+#' @author Tomas Hrbek December 2022
+#'
+#' @param vcf -> vcfR object
+#' @param ind_pop -> population assignment of individuals in vcf (factor)
+#' @param keep_pop -> population(s) of interest to include in Genlight infile (factor)
+#' @param inc_missing -> include missing data (logical)
+#' @export nothing
+#' @return Genlight object
+#'
+#' @details
+#' This function converts the vcfR object to a Genlight formatted input file
+#' This function labels populations.
+#' The function will remove indels, and multiallelic loci, and optionally loci with missing data
+#'
+#' @example
+#' vcf2genlight(vcf = my_vcf, ind_pop = ind_pop, keep_pop = keepers, ploidy = 2, inc_missing = TRUE)
+#' vcf2genlight(my_vcf, ind_pop, keepers)
+#'
+
+vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE)
+{
+  if (class(vcf) != "vcfR") {
+    stop(paste("Expecting an object of class vcfR, received a", 
+               class(vcf), "instead"))
+  }
+  if (class(ind_pop) != "factor" | class(keep_pop) != "factor") {
+    stop(paste("Expecting population vector, received a", 
+               class(ind_pop), "and", class(keep_pop), "instead"))
+  }
+  vcf <- extract.indels(vcf, return.indels = F)
+  vcf <- vcf[is.biallelic(vcf), ]
+  if (inc_missing == FALSE) {
+    gt <- extract.gt(vcf, convertNA = T)
+    vcf <- vcf[!rowSums(is.na(gt)), ]
+  }
+  vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
+  if (any(is.na(getID(vcf2)))) {
+    vcf2 <- addID(vcf2)
+  }
+  gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
+  gt[is.na(gt)] <- "NA"
+  gt[gt == "0/0" | gt == "0|0"] <- "0"
+  gt[gt == "1/1" | gt == "1|1"] <- "2"
+  gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
+  
+  # create genelight object
+  x <- new("genlight", t(gt))
+  
+  adegenet::chromosome(x) <- getCHROM(vcf2)
+  adegenet::position(x) <- getPOS(vcf2)
+  adegenet::pop(x) <- ind_pop[ind_pop %in% keep_pop]
+  adegenet::ploidy(x) <- ploidy
+  
+  return(x)
+}
+
+
+################################
 #' @title vcf2bayescan
 #' @description converts vcfR format data to Bayescan infile
 #' @description in part based on vcfR2migrate function (vcfR package)
@@ -642,8 +704,8 @@ vcf2eigenstrat <- function (vcf, ind_pop, keep_pop, sex = "U", rel_pos = 0, inc_
   vcf2 <- vcf_sub_pops(vcf, ind_pop, keep_pop)
   gt <- extract.gt(vcf2, return.alleles = F, convertNA = T)
   gt[is.na(gt)] <- "9"
-  gt[gt == "0/0" | gt == "0|0"] <- "2"
-  gt[gt == "1/1" | gt == "1|1"] <- "0"
+  gt[gt == "0/0" | gt == "0|0"] <- "0"
+  gt[gt == "1/1" | gt == "1|1"] <- "2"
   gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
   
   df <- apply(gt, 1, function(x){glue::glue_collapse(x)})
