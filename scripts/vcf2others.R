@@ -496,7 +496,7 @@ vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE
   gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
   
   # create genelight object
-  suppressWarnings(x <- new("genlight", t(gt)))
+  suppressWarnings(x <- as(t(gt), "genlight"))
   
   adegenet::chromosome(x) <- getCHROM(vcf2)
   adegenet::position(x) <- getPOS(vcf2)
