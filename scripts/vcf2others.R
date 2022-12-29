@@ -573,10 +573,15 @@ vcf2df <- function (vcf, ind_pop, keep_pop, alleles = TRUE, inc_missing = TRUE,
     gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
   }
   
-  df <- cbind(t(gt), as.character(ind_pop))
-  colnames(df)[ncol(df)] <- "group"
+  df <- t(gt)
   
   utils::write.table(df, file = out_file, quote = FALSE, sep = "\t", col.names = TRUE, row.names = TRUE)
+  
+  df <- cbind(t(gt), as.character(ind_pop))
+  colnames(df)[ncol(df)] <- "group"
+  df <- df[,-(2:(ncol(df)-1))]
+  
+  utils::write.table(df, file = paste(out_file, 'groups', sep = '.'), quote = FALSE, sep = "\t", col.names = TRUE, row.names = TRUE)
   
   return(invisible(NULL))
 }
