@@ -469,7 +469,7 @@ vcf2genepop <- function (vcf, ind_pop, keep_pop, inc_missing = TRUE,
 #' vcf2genlight(my_vcf, ind_pop, keepers)
 
 vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE, 
-                          out_file = "genlight_infile.R")
+                          save = TRUE, out_file = "genlight_infile.rda")
 {
   if (class(vcf) != "vcfR") {
     stop(paste("Expecting an object of class vcfR, received a", 
@@ -496,14 +496,15 @@ vcf2genlight <- function (vcf, ind_pop, keep_pop, ploidy = 2, inc_missing = TRUE
   gt[gt == "0/1" | gt == "0|1" | gt == "1/0" | gt == "1|0"] <- "1"
   
   # create genelight object
-  suppressWarnings(x <- as(t(gt), "genlight"))
-  
+  library(adegenet)
+  x <- suppressWarnings(new("genlight", t(gt)))
   adegenet::chromosome(x) <- getCHROM(vcf2)
   adegenet::position(x) <- getPOS(vcf2)
   adegenet::pop(x) <- ind_pop[ind_pop %in% keep_pop]
   adegenet::ploidy(x) <- ploidy
+  adegenet::strata(x) <- data.frame(groups = pop(x))
   
-  save(x, file = out_file)
+  if (save == TRUE) save(x, file = out_file)
   
   return(x)
 }
