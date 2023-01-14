@@ -1197,7 +1197,7 @@ vcf_sub_loci <- function(vcf, n_loci = 1000) {
 #' @author Tomas Hrbek February 2022
 #'
 #' @param vcf -> vcfR object
-#' @param miss_p -> max missing data per locus as decimal (numeric)
+#' @param p_miss -> max missing data per locus as decimal (numeric)
 #' @export nothing
 #' @return subsetted vcfR object
 #'
@@ -1205,23 +1205,23 @@ vcf_sub_loci <- function(vcf, n_loci = 1000) {
 #' This function subsets the vcfR object by % missing data, returning new vcfR object
 #'
 #' @example
-#' vcf_filter_missingness(vcf = my_vcf, miss_p = miss_p)
-#' vcf_filter_missingness(my_vcf, miss_p)
+#' vcf_filter_missingness(vcf = my_vcf, p_miss = p_miss)
+#' vcf_filter_missingness(my_vcf, p_miss)
 #'
 
-vcf_filter_missingness <- function(vcf, miss_p) {
+vcf_filter_missingness <- function(vcf, p_miss) {
   gt <- extract.gt(vcf, convertNA = T)
   # get number of samples in vcf
   n_samples <- ncol(gt)
   
   # keep only those loci with < % missing data
-  vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*miss_p),]
+  vcf <- vcf[rowSums(is.na(gt)) < floor(n_samples*p_miss),]
   
   # print VCF matrix completeness
   vcf1 <- vcf_filter_oneSNP(vcf)
   gt <- extract.gt(vcf1, convertNA = T)
-  missing_p <- sum(is.na(gt)) / length(gt)
-  print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
+  p_missing <- sum(is.na(gt)) / length(gt)
+  print(paste("final % missing data in VCF is", round(p_missing*100, 2), "%", sep = " "))
   
   return(vcf)
 }
@@ -1233,7 +1233,7 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 #' @author Tomas Hrbek October 2022
 #'
 #' @param vcf -> vcfR object
-#' @param miss_p -> max missing data per locus as decimal (numeric)
+#' @param p_miss -> max missing data per locus as decimal (numeric)
 #' @export nothing
 #' @return subsetted vcfR object
 #'
@@ -1242,28 +1242,28 @@ vcf_filter_missingness <- function(vcf, miss_p) {
 #' and individual, returning new vcfR object
 #'
 #' @example
-#' vcf_filter_missing_indivs(vcf = my_vcf, miss_p = miss_p)
-#' vcf_filter_missing_indivs(my_vcf, miss_p)
+#' vcf_filter_missing_indivs(vcf = my_vcf, p_miss = p_miss)
+#' vcf_filter_missing_indivs(my_vcf, p_miss)
 #'
 
-vcf_filter_missing_indivs <- function(vcf, miss_p) {
+vcf_filter_missing_indivs <- function(vcf, p_miss) {
   gt <- extract.gt(vcf, convertNA = T)
   # get number of snps in vcf
   n_snps <- nrow(gt)
   
   # report which samples above threshold
-  samples_removed <- colnames(gt)[colSums(is.na(gt)) > floor(n_snps*miss_p)]
+  samples_removed <- colnames(gt)[colSums(is.na(gt)) > floor(n_snps*p_miss)]
   cat(paste("removed samples are:", samples_removed, "\n", sep = " "))
   
   # keep only those loci with < % missing data
-  vcf <- vcf[, c(TRUE, colSums(is.na(gt)) < floor(n_snps*miss_p))] %>%
+  vcf <- vcf[, c(TRUE, colSums(is.na(gt)) < floor(n_snps*p_miss))] %>%
     vcf_filter_invariant()
   
   # print VCF matrix completeness
   vcf1 <- vcf_filter_oneSNP(vcf)
   gt <- extract.gt(vcf1, convertNA = T)
-  missing_p <- sum(is.na(gt)) / length(gt)
-  print(paste("final % missing data in VCF is", round(missing_p*100, 2), "%", sep = " "))
+  p_missing <- sum(is.na(gt)) / length(gt)
+  print(paste("final % missing data in VCF is", round(p_missing*100, 2), "%", sep = " "))
   
   return(vcf)
 }
