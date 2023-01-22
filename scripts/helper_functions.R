@@ -58,7 +58,7 @@ explode <- function(df, w, .id = NULL) {
 }
 
 # generate table of samples and barcode sequences from table of samples and barcode names
-recode_by_lookup <- function (df, lookup, ngs = "illumina") {
+recode_by_lookup <- function (df, lookup, ngs = "illumina", ...) {
   if(!is.data.frame(lookup) && !is.matrix(lookup)) {
     stop("The lookup table must be a data.frame or matrix")
   }
@@ -85,6 +85,9 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina") {
   }
   else if (ncol(df) != 3 && ngs == "ion_seq") {
     stop("The IonTorrent dataframe must have three colums; id A P1")
+  }
+  else if (ncol(df) != 4 && ngs == "ref_seq") {
+    stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
   
   # convert tibble to dataframe (otherwise df operations do not work)
@@ -126,6 +129,22 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina") {
     df$P1 <- lookup[match(df$P1, lookup[, 1]), 2]
     # reorder columns
     col_order <- c("id", "A", "P1")
+    df <- df[, col_order]
+  }
+  else if(ngs == "ref_seq") {
+    # lookup q5
+    df$Q5n <- df$Q5
+    df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
+    # lookup q7
+    df$Q7n <- df$Q7
+    df$Q7 <- lookup[match(df$Q7, lookup[, 1]), 2]
+    # lookup Ham
+    df$Hamn <- ham
+    df$Ham <- lookup[match(df$Hamn, lookup[, 1]), 2]
+    df$primerF <- primerF
+    df$primerR <- primerR
+    # reorder columns
+    col_order <- c("Q7n", "Q7", "Q5n", "Q5", "Hamn", "Ham", "primerF", "primerR", "pos", "id")
     df <- df[, col_order]
   }
   
