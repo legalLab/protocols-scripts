@@ -53,7 +53,6 @@ explode <- function(df, w, .id = NULL) {
   if (!is.null(.id)) {
     df[[.id]] <- sequence(w)
   }
-  
   return(df)
 }
 
@@ -147,7 +146,39 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina", ...) {
     col_order <- c("Q7n", "Q7", "Q5n", "Q5", "Hamn", "Ham", "primerF", "primerR", "pos", "id")
     df <- df[, col_order]
   }
-  
   return(df)
+}
+
+# process NCBI local blast+ output
+analyze_edna <- function(infile, path, lookup_table, pid = 0.97, len = 99, n_reads = 5) {
+  #check if file is not empty first - empty gz files are 61-62 bytes
+  #try(if(file.size(paste0(path, infile)) <= 100L) stop(paste0("empty file: ", infile)))
+  
+  # check if file is not empty first - empty gz files are 61-62 bytes
+  # make a fake file with 1 sample "bob"
+  if(file.size(paste0(path, infile)) <= 100L) {
+    blast_table <- tibble(id = "bob", n = 1, freq = 0, taxonomy = ";;;;;;Bob bob")
+    return(blast_table)
+    break
+  }
+  
+  blast <- read.table(gzfile(paste0(path, infile)), header = FALSE, sep = "\t")
+  colnames(blast) <- c('qacc', 'sacc', 'evalue', 'pident', 'mismatch', 'length', 'qstart', 'qend', 'sstart', 'send')
+  
+  blast <- as_tibble(blast) %>%
+    distinct(qacc, .keep_all = TRUE) %>%
+    filter(pident >= pid & length > len)
+  
+  blast_table <- blast %>%
+    group_by(sacc) %>%
+    summarise(n = n()) %>%
+    mutate(freq = n/sum(n)) %>%
+    filter(n >= n_reads) %>%
+    arrange(desc(n)) %>%
+    rename(id = sacc) %>%
+    left_join(lookup_table, by = 'id') %>%
+    add_row(id = "bob", n = 1, freq = 0, taxonomy = ";;;;;;Bob bob")
+  
+  return(blast_table)
 }
 
