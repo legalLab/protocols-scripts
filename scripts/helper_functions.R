@@ -57,7 +57,7 @@ explode <- function(df, w, .id = NULL) {
 }
 
 # generate table of samples and barcode sequences from table of samples and barcode names
-recode_by_lookup <- function (df, lookup, ngs = "illumina", ...) {
+recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
   if(!is.data.frame(lookup) && !is.matrix(lookup)) {
     stop("The lookup table must be a data.frame or matrix")
   }
@@ -76,7 +76,7 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina", ...) {
   if(ncol(df) != 3 && ngs == "azenta") {
     stop("The Illumina dataframe must have three colums; q5 q7 id")
   }
-  else if (ncol(df) != 3 && ngs == "illumina") {
+  else if (ncol(df) != 3 && ngs == "novogene") {
     stop("The Illumina dataframe must have three colums; q5 q7 id")
   }
   else if (ncol(df) != 2 && ngs == "ion") {
@@ -105,7 +105,7 @@ recode_by_lookup <- function (df, lookup, ngs = "illumina", ...) {
     col_order <- c("id", "Q7n", "Q7", "Q5n", "Q5")
     df <- df[, col_order]
   }
-  else if(ngs == "illumina") {
+  else if(ngs == "novogene") {
     # lookup q5
     df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
     # lookup q7
