@@ -159,7 +159,7 @@ recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
     # subset primer list by taxon
     primers <- primers[primers[,1] == taxon,]
     # lookup micros, loop through primers
-    for (i in 1:length(primers)) {
+    for (i in 1:nrow(primers)) {
       df1 <- df
       df1$taxon <- primers[i,1]
       df1$primer <- primers[i,2]
