@@ -88,6 +88,9 @@ recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
   else if (ncol(df) != 4 && ngs == "ref_seq") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
+  else if (ncol(df) != 4 && ngs == "micro_seq") {
+    stop("The Illumina dataframe must have four colums; q5 q7 pos id")
+  }
   
   # convert tibble to dataframe (otherwise df operations do not work)
   df <- as.data.frame(df)
@@ -145,6 +148,32 @@ recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
     # reorder columns
     col_order <- c("Q7n", "Q7", "Q5n", "Q5", "Hamn", "Ham", "primerF", "primerR", "pos", "id")
     df <- df[, col_order]
+  }
+  else if(ngs == "micro_seq") {
+    # lookup q5
+    df$Q5n <- df$Q5
+    df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
+    # lookup q7
+    df$Q7n <- df$Q7
+    df$Q7 <- lookup[match(df$Q7, lookup[, 1]), 2]
+    # subset primer list by taxon
+    primers <- primers[primers[,1] == taxon,]
+    # lookup micros, loop through primers
+    for (i in 1:length(primers)) {
+      df1 <- df
+      df1$taxon <- primers[i,1]
+      df1$primer <- primers[i,2]
+      df1$primerF <- primers[i,3]
+      df1$primerR <- primers[i,4]
+      if (i == 1) {
+        df2 <- df1
+      } else {
+        df2 <- add_row(df2, df1)
+      }
+    }
+    # reorder columns
+    col_order <- c("Q7n", "Q7", "Q5n", "Q5", "taxon", "primer", "primerF", "primerR", "pos", "id")
+    df <- df2[, col_order]
   }
   return(df)
 }
