@@ -1263,6 +1263,48 @@ vcf2fasta <-function (vcf, ind_pop, keep_pop, interleaved = FALSE, inc_missing =
 
 
 ################################
+#' @title vcf_extract_indivs
+#' @description extract individuals from vcf, keeping all SNPs
+#' @author Tomas Hrbek October 2023
+#'
+#' @param vcf -> vcfR object
+#' @param indiv -> individuals to retain/drop in vcf (factor)
+#' @export nothing
+#' @return subsetted vcfR object
+#'
+#' @details
+#' This function subsets the vcfR object by individuals, returning new vcfR object
+#'
+#' @example
+#' vcf_extract_indivs(vcf = my_vcf, indiv = indivs_to_keep, whitelist = TRUE)
+#' vcf_extract_indivs(vcf = my_vcf, indiv = indivs_to_drop, whitelist = FALSE)
+#' vcf_extract_indivs(my_vcf, indivs_to_keep)
+#'
+
+vcf_extract_indivs <- function(vcf, indiv, whitelist = TRUE) {
+  # read all sample names in vcf
+  vcf_names <- colnames(vcf@gt)[-1]
+  
+  # allow empty indiv list - keep all individuals
+  if (length(indiv) == 0){
+    indiv <- vcf_names
+    whitelist <- TRUE
+  }
+  
+  ids <- which(vcf_names %in% indiv)
+  ids <- ids+1
+  if (whitelist == TRUE){
+    vcf <- vcf[, c(1,ids)]
+  }
+  else {
+    vcf <- vcf[, -c(ids)]
+  }
+  
+  return(vcf)
+}
+
+
+################################
 #' @title vcf_sub_pops
 #' @description subsets vcfR format data by population
 #' @author Tomas Hrbek December 2020
