@@ -1263,6 +1263,42 @@ vcf2fasta <-function (vcf, ind_pop, keep_pop, interleaved = FALSE, inc_missing =
 
 
 ################################
+#' @title vcf_merge
+#' @description merge two vcf; merge second vcf into first one
+#' @author Tomas Hrbek October 2023
+#'
+#' @param vcf -> vcfR object
+#' @param vcf1 -> vcfR object
+#' @export nothing
+#' @return augmented vcfR object
+#'
+#' @details
+#' This function adds all individuals from a second vcfR object into a first vcfR object, returning new vcfR object
+#'
+#' @example
+#' vcf_merge(vcf = my_vcf, vcf1 = other_vcf)
+#' vcf_merge(my_vcf, other_vcf)
+#'
+
+vcf_merge <- function(vcf, vcf1) {
+  vcf_gt <- vcf@gt %>%
+    as.data.frame() %>%
+    mutate(id = getID(vcf))
+  vcf1_gt <- vcf1@gt %>%
+    as.data.frame() %>%
+    mutate(id = getID(vcf1))
+  
+  vcf_merged_gt <-left_join(vcf_gt, vcf1_gt) %>%
+    select(-id) %>%
+    as.matrix()
+  
+  vcf@gt <- vcf_merged_gt
+  
+  return(vcf)
+}
+
+
+################################
 #' @title vcf_add_indivs
 #' @description add individuals to vcf
 #' @author Tomas Hrbek October 2023
@@ -1279,7 +1315,7 @@ vcf2fasta <-function (vcf, ind_pop, keep_pop, interleaved = FALSE, inc_missing =
 #' @example
 #' vcf_add_indivs(vcf = my_vcf, vcf1 = other_vcf, indiv = indivs_to_add, whitelist = TRUE)
 #' vcf_add_indivs(vcf = my_vcf, vcf1 = other_vcf, indiv = indivs_to_not_add, whitelist = FALSE)
-#' vcf_add_indivs(my_vcf, vcf1, indivs_to_add)
+#' vcf_add_indivs(my_vcf, other_vcf, indivs_to_add)
 #'
 
 vcf_add_indivs <- function(vcf, vcf1, indiv, whitelist = TRUE) {
