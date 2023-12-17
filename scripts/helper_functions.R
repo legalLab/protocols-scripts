@@ -57,7 +57,7 @@ explode <- function(df, w, .id = NULL) {
 }
 
 # generate table of samples and barcode sequences from table of samples and barcode names
-recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
+recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
   if(!is.data.frame(lookup) && !is.matrix(lookup)) {
     stop("The lookup table must be a data.frame or matrix")
   }
@@ -179,14 +179,14 @@ recode_by_lookup <- function (df, lookup, ngs = "novogene", ...) {
 }
 
 # process NCBI local blast+ output
-analyze_edna <- function(infile, path, lookup_table, pid = 0.97, len = 99, n_reads = 5) {
+analyze_edna <- function(infile, path, lookup_table, pid = .97, len = 99, n_reads = 4) {
   #check if file is not empty first - empty gz files are 61-62 bytes
   #try(if(file.size(paste0(path, infile)) <= 100L) stop(paste0("empty file: ", infile)))
   
   # check if file is not empty first - empty gz files are 61-62 bytes
   # make a fake file with 1 sample "bob"
   if(file.size(paste0(path, infile)) <= 100L) {
-    blast_table <- tibble(id = "bob", n = 1, freq = 0, taxonomy = ";;;;;;Bob bob")
+    blast_table <- tibble(id = "bob", n = 1, freq = 0, taxonomy = "Bob;Bob;Bob;Bob;Bob;Bob;Bob bob")
     return(blast_table)
     break
   }
@@ -196,18 +196,20 @@ analyze_edna <- function(infile, path, lookup_table, pid = 0.97, len = 99, n_rea
   
   blast <- as_tibble(blast) %>%
     distinct(qacc, .keep_all = TRUE) %>%
+    mutate(pident = pident/100) %>%
     filter(pident >= pid & length > len)
   
+  #blast$sacc <- str_extract(blast$sacc, regex("[a-zA-Z0-9_]+$"))
   blast_table <- blast %>%
+    mutate(n = as.numeric(str_extract(.$qacc, pattern = "[0-9]+$"))) %>%
     group_by(sacc) %>%
-    summarise(n = n()) %>%
+    summarise(n = sum(n)) %>%
     mutate(freq = n/sum(n)) %>%
-    filter(n >= n_reads) %>%
+    filter(n > n_reads) %>%
     arrange(desc(n)) %>%
     rename(id = sacc) %>%
     left_join(lookup_table, by = 'id') %>%
-    add_row(id = "bob", n = 1, freq = 0, taxonomy = ";;;;;;Bob bob")
+    add_row(id = "bob", n = 1, freq = 0, taxonomy = "Bob;Bob;Bob;Bob;Bob;Bob;Bob bob")
   
   return(blast_table)
 }
-
