@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+# functions use ggplot2 and tidy data so depend on 
+# ggplot2
+# dplyr
+# tidyr
 
 # functions for tracking selection in a three allele Hemoglobin system
 # based on Templeton, A.R., 2006. Population Genetics and Microevolutionary Theory. John Wiley & Sons, New York, NY.
