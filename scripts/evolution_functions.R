@@ -1,5 +1,9 @@
 #!/usr/bin/env Rscript
 
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
 # functions for tracking selection in a three allele Hemoglobin system
 # based on Templeton, A.R., 2006. Population Genetics and Microevolutionary Theory. John Wiley & Sons, New York, NY.
 
@@ -274,47 +278,44 @@ evolve <- function(genotypes, fitness, gens, Ne = 0, drift = FALSE) {
 ################################
 # small helper function to generate simple allele frequency plots
 plot_alleles <- function(x) {
-  par(mar = c(5.1, 4.1, 4.1, 2.1))
-  par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$fA, type = 'l', ylim = c(0,1), main = 'Allelic Frequencies', 
-          xlab = 'generations', ylab = 'allelic frequencies')
-  matlines(x$fS, type = 'l', col = 'red')
-  matlines(x$fC, type = 'l', col = 'blue')
-  legend(1.07*nrow(x), 1, c('fA', 'fS', 'fC'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
-  
-  return(invisible(NULL)) #just to keep things honest
+  df_long <- x %>%
+    select(c(fA, fS, fC)) %>%
+    mutate(gens = 1:nrow(.)) %>%
+    pivot_longer(cols = -gens, names_to = "alleles", values_to = "freq")
+  plt <- ggplot(df_long, aes(x = gens, y = freq, group = alleles, colour = alleles)) + 
+    geom_line() + 
+    labs(title = "Allelic Frequencies", x = "Generation", y = "Allele Frequency", colour = "Alleles")
+
+  return(plt)
 }
 
 ################################
 # small helper function to generate simple genotype frequency plots
 plot_genotypes <- function(x) {
-  par(mar = c(5.1, 4.1, 4.1, 2.1))
-  par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$fAA, type = 'l', ylim = c(0,1), main = 'Genotypic Frequencies', 
-          xlab = 'generations', ylab = 'genotypic frequencies')
-  matlines(x$fAS, type = 'l', col = 'red')
-  matlines(x$fAC, type = 'l', col = 'blue')
-  matlines(x$fSS, type = 'l', col = 'green')
-  matlines(x$fSC, type = 'l', col = 'yellow')
-  matlines(x$fCC, type = 'l', col = 'orange')
-  legend(1.07*nrow(x), 1, c('fAA', 'fAS', 'fAC', 'fSS', 'fSC', 'fCC'), cex = 0.8, 
-         col = c('black', 'red', 'blue', 'green', 'yellow', 'orange'), lty=c(1, 1, 1, 1, 1, 1))
+  df_long <- x %>%
+    select(c(fAA, fAS, fAC, fSS, fSC, fCC)) %>%
+    mutate(gens = 1:nrow(.)) %>%
+    pivot_longer(cols = -gens, names_to = "genotypes", values_to = "freq")
+  plt <- ggplot(df_long, aes(x = gens, y = freq, group = genotypes, colour = genotypes)) + 
+    geom_line() + 
+    labs(title = "Genotypic Frequencies", x = "Generation", y = "Genotype Frequency", colour = "Genotypes")
   
-  return(invisible(NULL)) #just to keep things honest
+  return(plt)
 }
 
 ################################
 # small helper function to generate simple allele frequency plots
 plot_fitness <- function(x) {
-  par(mar = c(5.1, 4.1, 4.1, 2.1))
-  par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(x$w, type = 'l', ylim = c(0,max(x$w)*1.1), main = 'Population Fitness', 
-          xlab = 'generations', ylab = 'fitness', col = 'green')
-  legend(1.07*nrow(x), 1, 'w', cex = 0.8, col = 'green', lty = 1)
+  df_long <- x %>%
+    select(c(w)) %>%
+    mutate(gens = 1:nrow(.)) %>%
+    pivot_longer(cols = -gens, names_to = "fitness", values_to = "freq")
+  plt <- ggplot(df_long, aes(x = gens, y = freq, group = fitness, colour = fitness)) + 
+    geom_line() + 
+    labs(title = "Population Fitness", x = "Generation", y = "Fitness", colour = "Fitness")
   
-  return(invisible(NULL)) #just to keep things honest
+  return(plt)
 }
-
 
 ################################
 # small helper function to summarize outcomes (mean and sd, counts of outcomes)
