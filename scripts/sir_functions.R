@@ -111,7 +111,7 @@ plot_sir <- function(x) {
     pivot_longer(cols = -gens, names_to = "states", values_to = "freq")
   plt <- ggplot(df_long, aes(x = gens, y = freq, group = states, colour = states)) + 
     geom_line() + 
-    labs(title = "SIR Frequencies", x = "Generation", y = "Category Frequency", colour = "Categories")
+    labs(title = "SIR Model", x = "Generation", y = "Category Numbers", colour = "Categories")
   
   return(plt)
 }
