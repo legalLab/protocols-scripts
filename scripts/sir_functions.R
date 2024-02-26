@@ -33,6 +33,9 @@ sir_det <- function(N, t, b, a){
   }
   sir_df <- as.data.frame(sir_m)
   sir_df$gens <- c(1:nrow(sir_df))
+  sir_df$S <- round(sir_df$S)
+  sir_df$I <- round(sir_df$I)
+  sir_df$R <- round(sir_df$R)
   return(sir_df)
 }
 
