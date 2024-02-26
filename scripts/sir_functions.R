@@ -31,7 +31,9 @@ sir_det <- function(N, t, b, a){
     # R = R in the previous iteration + newly recovered individuals in the previous iteration
     sir_m[i,3] <- sir_m[i-1,3] + a*sir_m[i-1,2]
   }
-  return(as.data.frame(sir_m))
+  sir_df <- as.data.frame(sir_m)
+  sir_df$gens <- c(1:nrow(sir_df))
+  return(sir_df)
 }
 
 
@@ -91,37 +93,37 @@ sir_stoch <- function(N, t, b, a) {
   sir_m[, "S"] <- apply(df == "S", 1, sum)
   sir_m[, "I"] <- apply(df == "I", 1, sum)
   sir_m[, "R"] <- apply(df == "R", 1, sum)
-  
-  return(as.data.frame(sir_m))
+
+  sir_df <- as.data.frame(sir_m)
+  sir_df$gens <- c(1:nrow(sir_df))
+  return(sir_df)
 }
 
 
 #------------------------------
 # plot results of one SIR run
-plot_sir <- function(df) {
-  # takes input matrix with cols of iterations, S, I, R
-  # and creates a plot with all three lines
-  # S = black, I = red, R = blue
-  t <- c(1:nrow(df))
-  par(mar = c(5.1, 4.1, 4.1, 2.1))
-  par(xpd=T, mar=par()$mar+c(0,0,0,3))
-  matplot(t, df$S, main = 'SIR Cases', xlab='time steps', ylab='number of individuals', type='l', col=1, ylim = c(-1,max(df$S)))
-  matlines(t, df$R, type = 'l', col = 'blue')
-  matlines(t, df$I, type = 'l', col = 'red')
-  legend(1.07*nrow(df), max(df$S), c('S', 'I', 'R'), cex = 0.8, col = c('black', 'red', 'blue'), lty=c(1, 1, 1))
+plot_sir <- function(x) {
+  df_long <- x %>%
+    select(c(gens, S, I, R)) %>%
+    pivot_longer(cols = -gens, names_to = "states", values_to = "freq")
+  plt <- ggplot(df_long, aes(x = gens, y = freq, group = states, colour = states)) + 
+    geom_line() + 
+    labs(title = "SIR Frequencies", x = "Generation", y = "Category Frequency", colour = "Categories")
   
-  return(invisible(NULL)) #just to keep things honest
+  return(plt)
 }
 
 
 #------------------------------
 # plot additional SIR runs, adding to an existing plot
-add_plot_sir <- function(df) {
+add_plot_sir <- function(p, x) {
   # overlay additional SIR simulations onto an existing plot
-  t <- c(1:nrow(df))
-  matlines(t, df$S, col=1)
-  matlines(t, df$I, col=2)
-  matlines(t, df$R, col=3)
+  df_long <- x %>%
+    select(c(gens, S, I, R)) %>%
+    pivot_longer(cols = -gens, names_to = "states", values_to = "freq")
+  plt <- p + geom_line(data = df_long, aes(x = gens, y = freq, group = states, colour = states))
+  
+  return(plt)
 }
 
 
@@ -129,11 +131,11 @@ add_plot_sir <- function(df) {
 # plot results of one stochastic SIR run
 multi_plot_sir <- function(N, t, b, a, reps) {
   # run x number of stochastic SIR simulations and plot
-  plot_sir(sir_stoch(N, t, b, a))	
+  plt <- plot_sir(sir_stoch(N, t, b, a))	
   for(i in 2:reps) {
-    add_plot_sir(sir_stoch(N, t, b, a))	
+    plt <- add_plot_sir(plt, sir_stoch(N, t, b, a))	
   }
-  return(invisible(NULL)) #just to keep things honest
+  return(plt)
 }
 
 
@@ -209,7 +211,9 @@ summarize_sir <- function(N, t, b, a, reps) {
   df$sdI <- round(I_rowstdev, 2)
   df$muR <- round(R_rowmeans, 1)
   df$sdR <- round(R_rowstdev, 2)
-    
+  
+  df$gens <- c(1:nrow(df))
+  
   return(df)
 }
 
