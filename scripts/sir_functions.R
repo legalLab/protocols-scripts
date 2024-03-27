@@ -107,6 +107,7 @@ sir_stoch <- function(N, t, b, a) {
 # plot results of one SIR run
 plot_sir <- function(x) {
   df_long <- x %>%
+    select(-starts_with("sd")) %>%
     pivot_longer(cols = -gens, names_to = "states", values_to = "freq")
   plt <- ggplot(df_long, aes(x = gens, y = freq, group = states, colour = states)) + 
     geom_line() + 
@@ -121,6 +122,7 @@ plot_sir <- function(x) {
 add_plot_sir <- function(p, x) {
   # overlay additional SIR simulations onto an existing plot
   df_long <- x %>%
+    select(-starts_with("sd")) %>%
     pivot_longer(cols = -gens, names_to = "states", values_to = "freq")
   plt <- p + geom_line(data = df_long, aes(x = gens, y = freq, group = states, colour = states))
   
