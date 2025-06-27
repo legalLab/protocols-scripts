@@ -86,10 +86,10 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
     stop("The IonTorrent dataframe must have three colums; id A P1")
   }
   else if (ncol(df) != 4 && ngs == "ref_seq") {
-    stop("The Illumina dataframe must have four colums; q5 q7 ham id")
+    stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
   else if (ncol(df) != 4 && ngs == "edna") {
-    stop("The Illumina dataframe must have four colums; q5 q7 ham id")
+    stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
   else if (ncol(df) != 4 && ngs == "micro_seq") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
