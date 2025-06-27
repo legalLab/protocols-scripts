@@ -86,7 +86,10 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
     stop("The IonTorrent dataframe must have three colums; id A P1")
   }
   else if (ncol(df) != 4 && ngs == "ref_seq") {
-    stop("The Illumina dataframe must have four colums; q5 q7 pos id")
+    stop("The Illumina dataframe must have four colums; q5 q7 ham id")
+  }
+  else if (ncol(df) != 4 && ngs == "edna") {
+    stop("The Illumina dataframe must have four colums; q5 q7 ham id")
   }
   else if (ncol(df) != 4 && ngs == "micro_seq") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
@@ -147,6 +150,19 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
     df$primerR <- primerR
     # reorder columns
     col_order <- c("Q7n", "Q7", "Q5n", "Q5", "Hamn", "Ham", "primerF", "primerR", "pos", "id")
+    df <- df[, col_order]
+  }
+  else if(ngs == "edna") {
+    # lookup q5
+    df$Q5n <- df$Q5
+    df$Q5 <- lookup[match(df$Q5, lookup[, 1]), 2]
+    # lookup q7
+    df$Q7n <- df$Q7
+    df$Q7 <- lookup[match(df$Q7, lookup[, 1]), 2]
+    df$primerF <- primerF
+    df$primerR <- primerR
+    # reorder columns
+    col_order <- c("pos", "id", "primerF", "primerR")
     df <- df[, col_order]
   }
   else if(ngs == "micro_seq") {
