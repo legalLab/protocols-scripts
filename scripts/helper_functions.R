@@ -76,22 +76,22 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
   if(ncol(df) != 3 && ngs == "azenta") {
     stop("The Illumina dataframe must have three colums; q5 q7 id")
   }
-  else if (ncol(df) != 3 && ngs == "novogene") {
+  else if(ncol(df) != 3 && ngs == "novogene") {
     stop("The Illumina dataframe must have three colums; q5 q7 id")
   }
-  else if (ncol(df) != 2 && ngs == "ion") {
+  else if(ncol(df) != 2 && ngs == "ion") {
     stop("The IonTorrent dataframe must have two colums; bc id")
   }
-  else if (ncol(df) != 3 && ngs == "ion_seq") {
+  else if(ncol(df) != 3 && ngs == "ion_seq") {
     stop("The IonTorrent dataframe must have three colums; id A P1")
   }
-  else if (ncol(df) != 4 && ngs == "ref_seq") {
+  else if(ncol(df) != 4 && ngs == "ref_seq") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
-  else if (ncol(df) != 4 && ngs == "edna") {
+  else if(ncol(df) != 4 && ngs == "edna") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
-  else if (ncol(df) != 4 && ngs == "micro_seq") {
+  else if(ncol(df) != 4 && ngs == "micro_seq") {
     stop("The Illumina dataframe must have four colums; q5 q7 pos id")
   }
   
@@ -175,7 +175,7 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
     # subset primer list by taxon
     primers <- primers[primers[,1] == taxon,]
     # lookup micros, loop through primers
-    for (i in 1:nrow(primers)) {
+    for(i in 1:nrow(primers)) {
       df1 <- df
       df1$taxon <- primers[i,1]
       df1$primer <- primers[i,2]
