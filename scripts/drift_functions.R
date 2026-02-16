@@ -33,7 +33,7 @@ simulate_drift <- function(n, p, n_gen, n_sim)
   return(drift)
 }
 
-plot_drift <- function(drift, n)
+plot_drift <- function(df, n)
 {
   #' plot_drift(drift)
   #' 
@@ -44,10 +44,10 @@ plot_drift <- function(drift, n)
   #' Returns a plot of the dataframe with each simulation a different 
   #' color.
   
-  n_gen <- nrow(drift)
-  n_sim <- ncol(drift)
+  n_gen <- nrow(df)
+  n_sim <- ncol(df)
   
-  df_long <- drift %>%
+  df_long <- df %>%
     mutate(gens = 1:nrow(.)) %>%
     pivot_longer(cols = -gens, names_to = "reps", values_to = "freq")
   plt <- ggplot(df_long, aes(x = gens, y = freq, group = reps, colour = reps)) + 
