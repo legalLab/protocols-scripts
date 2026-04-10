@@ -46,6 +46,29 @@ tibble_to_DNAbin <- function(df) {
 }
 
 ##################################
+# calculate diversity indices
+##################################
+get_div_indices <- function(df) {
+  all_groups <- list()
+  samples <- select(df, -1) %>%
+    colnames()
+  for (sample in samples) {
+    x <- df[[sample]]
+    N <- sum(x, na.rm = TRUE)
+    S <- sum(x > 0, na.rm = TRUE)
+    p <- x / N
+    shannon <- -sum(p * log(p), na.rm = TRUE)
+    simpson <- 1 - sum(p^2, na.rm = TRUE)
+    inv_simpson <- 1 / sum(p^2, na.rm = TRUE)
+    pielou <- ifelse(S > 0, shannon / log(S), NA)
+    berger <- max(p, na.rm = TRUE)
+    all_groups[[sample]] <- list(S = S, Shannon = shannon, Simpson = simpson, InvSimpson = inv_simpson, Pielou = pielou, Berger = berger)
+  }
+  return(all_groups)
+}
+
+
+##################################
 # compute MRCA + collapsed descendant
 ##################################
 collapse_taxa <- function(taxa_vec) {
