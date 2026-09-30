@@ -152,6 +152,12 @@ recode_by_lookup <- function(df, lookup, ngs = "novogene", ...) {
     col_order <- c("Q7n", "Q7", "Q5n", "Q5", "Hamn", "Ham", "primerF", "primerR", "pos", "id")
     df <- df[, col_order]
   }
+  else if(ngs == "demux") {
+    df$Q7n_Q5n <- paste0(df$Q7, "_", df$Q5)
+    # reorder columns
+    col_order <- c("id", "Q7n_Q5n")
+    df <- df[, col_order]
+  }
   else if(ngs == "edna") {
     # lookup q5
     df$Q5n <- df$Q5
